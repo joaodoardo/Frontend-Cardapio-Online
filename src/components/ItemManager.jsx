@@ -49,7 +49,7 @@ const ItemManager = () => {
     return (
         <div style={styles.card}>
             <div style={{...styles.input, padding: '1.5rem', border: 'none', height: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                <h3 style={{fontSize: '1.125rem', fontWeight: 500}}>Itens do Cardápio</h3>
+                <h3 style={{fontSize: '1.125rem', fontWeight: 500, color: 'black'}}>Itens do Cardápio</h3>
                 <StyledButton onClick={() => handleOpenModal()}><PlusIcon style={{width:'1rem', height:'1rem', marginRight: '0.5rem'}}/>Adicionar Item</StyledButton>
             </div>
             <div style={{borderTop: '1px solid #E5E7EB', overflowX: 'auto'}}>

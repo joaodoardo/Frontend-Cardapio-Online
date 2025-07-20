@@ -7,7 +7,7 @@ const styles = {
   buttonDestructive: { backgroundColor: '#DC2626', color: 'white' },
   buttonGhost: { backgroundColor: 'transparent' },
   card: { backgroundColor: 'white', borderRadius: '0.75rem', border: '1px solid #E5E7EB', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' },
-  input: { display: 'flex', height: '2.5rem', width: '100%', borderRadius: '0.375rem', border: '1px solid #D1D5DB', backgroundColor: 'white', padding: '0.5rem 0.75rem', fontSize: '0.875rem', boxSizing: 'border-box' },
+  input: {display: 'flex', height: '2.5rem', width: '100%', borderRadius: '0.375rem', border: '1px solid #D1D5DB', backgroundColor: 'white', padding: '0.5rem 0.75rem', fontSize: '0.875rem', boxSizing: 'border-box', color: 'black' },
   label: { fontSize: '0.875rem', fontWeight: 500, color: '#374151', display: 'block', marginBottom: '0.5rem' },
   modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 50, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' },
   modalContent: { backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', width: '100%', maxWidth: '500px', margin: 'auto' },

@@ -46,7 +46,7 @@ const CategoryManager = () => {
                     <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
                         {categories.map((cat, index) => (
                            <li key={cat.id} style={{padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: index < categories.length - 1 ? '1px solid #E5E7EB' : 'none'}}>
-                               <span>{cat.nome}</span>
+                               <span style={{color: 'black'}}>{cat.nome}</span>
                            </li>
                         ))}
                     </ul>

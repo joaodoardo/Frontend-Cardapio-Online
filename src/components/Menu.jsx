@@ -51,7 +51,7 @@ const Menu = () => {
     return (
         <>
             <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-                <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>Nosso Cardápio</h2>
+                <h2 style={{ color: '#4B5563', fontSize: '1.875rem', fontWeight: 'bold' }}>Nosso Cardápio</h2>
                 <p style={{ color: '#6B7280', marginTop: '0.5rem' }}>As melhores pizzas da região, feitas no brasa!</p>
             </div>
 
@@ -75,7 +75,7 @@ const Menu = () => {
                         {filteredItems.map(item => (
                             <div key={item.id} style={{ ...styles.card, display: 'flex', flexDirection: 'column' }}>
                                 <div style={{ flexGrow: 1, padding: '1.5rem' }}>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>{item.nome}</h3>
+                                    <h3 style={{ color: '#4B5563', fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>{item.nome}</h3>
                                     <p style={{ color: '#4B5563', marginBottom: '1rem', flexGrow: 1 }}>{item.descricao}</p>
                                 </div>
                                 <div style={{ padding: '1.5rem', paddingTop: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -27,7 +27,7 @@ const ScheduleManager = () => {
     return (
         <div style={styles.card}>
             <div style={{...styles.input, padding: '1.5rem', border: 'none', height: 'auto', flexDirection: 'column'}}>
-                <h3 style={{fontSize: '1.125rem', fontWeight: 500}}>Definir Horários de Funcionamento</h3>
+                <h3 style={{fontSize: '1.125rem', fontWeight: 500, color: 'black'}}>Definir Horários de Funcionamento</h3>
                 <p style={{fontSize: '0.875rem', color: '#6B7280', marginTop: '0.25rem'}}>Marque os dias e horários em que a loja estará aberta para pedidos.</p>
             </div>
             <div style={{borderTop: '1px solid #E5E7EB', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
@@ -35,11 +35,11 @@ const ScheduleManager = () => {
                     <div key={index} style={{display: 'grid', gridTemplateColumns: '1fr 2fr', alignItems: 'center', gap: '1rem', flexWrap: 'wrap'}}>
                         <label htmlFor={`check-${index}`} style={{fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                             <input type="checkbox" id={`check-${index}`} checked={day.open} onChange={(e) => handleInputChange(index, 'open', e.target.checked)} />
-                            {day.name}
+                            <span style={{ color: 'black'}}>{day.name}</span>
                         </label>
                         <div style={{display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap'}}>
                             <input type="time" value={day.start} onChange={(e) => handleInputChange(index, 'start', e.target.value)} disabled={!day.open} style={styles.input} />
-                            <span>às</span>
+                            <span style={{color: 'black'}}>às</span>
                             <input type="time" value={day.end} onChange={(e) => handleInputChange(index, 'end', e.target.value)} disabled={!day.open} style={styles.input} />
                         </div>
                     </div>

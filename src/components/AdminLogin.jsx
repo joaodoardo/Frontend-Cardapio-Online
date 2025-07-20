@@ -26,7 +26,7 @@ const AdminLogin = ({ setView }) => {
             <div style={{width: '100%', maxWidth: '400px'}}>
                 <div style={{textAlign: 'center', marginBottom: '1.5rem'}}>
                     <PizzaIcon style={{height: '3rem', width: '3rem', color: '#EA580C', margin: '0 auto'}}/>
-                    <h2 style={{marginTop: '0.5rem', fontSize: '1.875rem', fontWeight: 'bold'}}>Acesso Restrito</h2>
+                    <h2 style={{color: 'black', marginTop: '0.5rem', fontSize: '1.875rem', fontWeight: 'bold'}}>Acesso Restrito</h2>
                     <p style={{marginTop: '0.5rem', color: '#4B5563'}}>Painel de Administração La Brasa</p>
                 </div>
                 <div style={styles.card}>

@@ -1,35 +1,104 @@
-import React, { useState, createContext, useContext, useMemo } from 'react';
+import React, { useState, createContext, useContext, useMemo, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 const ScheduleContext = createContext();
 
 export const useSchedule = () => useContext(ScheduleContext);
 
+// Função para transformar o array da API no objeto que o frontend usa
+const transformApiDataToScheduleObject = (apiData) => {
+    return apiData.reduce((acc, day) => {
+        acc[day.diaDaSemana] = {
+            name: day.nome,
+            open: day.aberto,
+            start: day.inicio,
+            end: day.fim,
+        };
+        return acc;
+    }, {});
+};
+
 export const ScheduleProvider = ({ children }) => {
-    const defaultSchedule = {
-        0: { name: 'Domingo', open: true, start: '18:00', end: '23:00' },
-        1: { name: 'Segunda', open: false, start: '18:00', end: '22:00' },
-        2: { name: 'Terça', open: true, start: '18:00', end: '22:00' },
-        3: { name: 'Quarta', open: true, start: '18:00', end: '22:00' },
-        4: { name: 'Quinta', open: true, start: '18:00', end: '22:00' },
-        5: { name: 'Sexta', open: true, start: '18:00', end: '23:00' },
-        6: { name: 'Sábado', open: true, start: '18:00', end: '23:00' },
-    };
+    const { token } = useAuth();
+    const [schedule, setSchedule] = useState(null); // Inicia como nulo até carregar
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const [schedule, setSchedule] = useState(() => {
+    // useEffect para buscar os dados da API quando o componente montar
+    useEffect(() => {
+        const fetchSchedule = async () => {
+            try {
+                const response = await fetch('http://localhost:3000/horarios');
+                if (!response.ok) {
+                    throw new Error('Falha ao buscar dados da API');
+                }
+                const apiData = await response.json();
+
+                // Se a API retornar um array vazio (ex: primeiro uso), precisamos criar os dados
+                if (apiData.length === 0) {
+                     // Aqui você pode definir um estado inicial e talvez chamar saveSchedule para popular o DB
+                     // Por enquanto, vamos assumir que o DB já foi semeado (seeded) com dados iniciais.
+                    console.warn("Banco de dados de horários está vazio.");
+                    // Poderia usar um defaultSchedule aqui.
+                    setSchedule({}); // Define um objeto vazio para não quebrar a UI
+                } else {
+                    const scheduleObject = transformApiDataToScheduleObject(apiData);
+                    setSchedule(scheduleObject);
+                }
+
+            } catch (err) {
+                setError(err.message);
+                console.error("Erro ao carregar horários:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSchedule();
+    }, []); // O array vazio [] garante que isso só rode uma vez
+
+    // Função de salvar adaptada para a API
+    const saveSchedule = async (newScheduleObject) => {
         try {
-            const savedSchedule = localStorage.getItem('pizzaria_horario');
-            return savedSchedule ? JSON.parse(savedSchedule) : defaultSchedule;
-        } catch (error) {
-            return defaultSchedule;
-        }
-    });
+            // Transforma o objeto do frontend de volta para um array que a API espera
+            const scheduleAsArray = Object.keys(newScheduleObject).map(key => ({
+                diaDaSemana: parseInt(key, 10),
+                nome: newScheduleObject[key].name,
+                aberto: newScheduleObject[key].open,
+                inicio: newScheduleObject[key].start,
+                fim: newScheduleObject[key].end
+            }));
 
-    const saveSchedule = (newSchedule) => {
-        localStorage.setItem('pizzaria_horario', JSON.stringify(newSchedule));
-        setSchedule(newSchedule);
+            const response = await fetch('http://localhost:3000/admin/horarios', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(scheduleAsArray),
+            });
+
+            if (!response.ok) {
+                throw new Error('Falha ao salvar os horários');
+            }
+
+            // Atualiza o estado local do contexto com os novos horários salvos
+            setSchedule(newScheduleObject);
+
+        } catch (err) {
+            console.error("Erro ao salvar horários:", err);
+            // Poderia adicionar um estado de erro para exibir na UI
+        }
     };
 
+    // useMemo continua funcionando perfeitamente, mas agora depende do schedule carregado
     const { isOpen, message } = useMemo(() => {
+        if (!schedule || loading) {
+            // Mensagem enquanto os dados estão sendo carregados
+            return { isOpen: false, message: 'Carregando status da loja...' };
+        }
+        
+        // A lógica original daqui para baixo permanece a mesma...
         const now = new Date();
         const dayOfWeek = now.getDay();
         const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
@@ -55,10 +124,13 @@ export const ScheduleProvider = ({ children }) => {
         } else {
             return { isOpen: false, message: 'Já fechamos por hoje. Volte amanhã!' };
         }
-    }, [schedule]);
+    }, [schedule, loading]);
+
+    // O valor provido agora também pode incluir o estado de loading/error se necessário
+    const value = { schedule, saveSchedule, isOpen, storeStatusMessage: message, loading, error };
 
     return (
-        <ScheduleContext.Provider value={{ schedule, saveSchedule, isOpen, storeStatusMessage: message }}>
+        <ScheduleContext.Provider value={value}>
             {children}
         </ScheduleContext.Provider>
     );

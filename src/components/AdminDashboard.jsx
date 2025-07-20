@@ -13,7 +13,7 @@ const AdminDashboard = ({ setView }) => {
         <div style={{minHeight: '100vh', backgroundColor: '#F9FAFB'}}>
             <header style={{backgroundColor: 'white', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)'}}>
                  <div style={{...styles.container, display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '5rem'}}>
-                    <h1 style={{fontSize: '1.25rem', fontWeight: 600}}>Painel Admin</h1>
+                    <h1 style={{fontSize: '1.25rem', fontWeight: 600, color: 'black'}}>Painel Admin</h1>
                     <StyledButton onClick={() => { logout(); setView('menu'); }} variant="secondary">Sair</StyledButton>
                 </div>
             </header>
