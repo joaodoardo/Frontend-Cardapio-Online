@@ -14,9 +14,13 @@ const Header = ({ setView }) => {
                         <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1F2937', letterSpacing: '-0.025em' }}>La Brasa Pizzaria</h1>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+
+                        
                         <button onClick={() => setView('adminLogin')} style={{ padding: '0.5rem', borderRadius: '9999px', background: 'transparent', border: 'none', cursor: 'pointer' }} title="Acesso Administrativo">
                             <UserCogIcon style={{ height: '1.5rem', width: '1.5rem', color: '#4B5563' }} />
                         </button>
+
+
                         <button onClick={() => setIsCartOpen(!isCartOpen)} style={{ position: 'relative', padding: '0.5rem', borderRadius: '9999px', background: 'transparent', border: 'none', cursor: 'pointer' }}>
                             <ShoppingCartIcon style={{ height: '1.5rem', width: '1.5rem', color: '#374151' }} />
                             {cartItemCount > 0 && (

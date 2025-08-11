@@ -62,7 +62,7 @@ const ItemManager = () => {
                                     <td style={{...styles.tableBodyCell, fontWeight: 500, color: '#111827'}}>{item.nome}</td>
                                     <td style={styles.tableBodyCell}>R$ {item.preco.toFixed(2)}</td>
                                     <td style={styles.tableBodyCell}><div style={{display: 'flex', gap: '0.25rem'}}>
-                                        <StyledButton variant="ghost" style={{padding: '0.25rem'}} onClick={() => handleOpenModal(item)}><EditIcon style={{width: '1.25rem', height: '1.25rem'}}/></StyledButton>
+                                        <StyledButton variant="ghost" style={{padding: '0.25rem', color: '#686868ff'}} onClick={() => handleOpenModal(item)}><EditIcon style={{width: '1.25rem', height: '1.25rem'}}/></StyledButton>
                                         <StyledButton variant="ghost" style={{padding: '0.25rem', color: '#DC2626'}} onClick={() => handleDelete(item.id)}><TrashIcon style={{width: '1.25rem', height: '1.25rem'}}/></StyledButton>
                                     </div></td>
                                 </tr>

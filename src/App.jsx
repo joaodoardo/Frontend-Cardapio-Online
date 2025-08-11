@@ -34,7 +34,7 @@ function AppViewManager() {
         case 'menu':
         default:
             return (
-                <div style={{ backgroundColor: '#F9FAFB', minHeight: '100vh' }}>
+                <div style={{ backgroundColor: '#fbf9fbff', minHeight: '100vh' }}>
                     <Header setView={setView} />
                     <StoreStatusBanner />
                     <main style={styles.container}>
