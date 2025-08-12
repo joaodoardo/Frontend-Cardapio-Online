@@ -1,12 +1,21 @@
 import React from 'react';
 import AdminDashboard from '../components/AdminDashboard';
 import AdminLogin from '../components/AdminLogin';
-import { AuthProvider } from '../contexts/AuthContext';
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { ScheduleProvider } from '../contexts/ScheduleContext'; 
+
+const AdminPageContent = () => {
+    const { isAuthenticated } = useAuth();
+    
+    return isAuthenticated ? <AdminDashboard /> : <AdminLogin />;
+};
 
 function AdmPage() {
   return (
     <AuthProvider>
-          <AdminLogin />
+      <ScheduleProvider>
+        <AdminPageContent />
+      </ScheduleProvider>
     </AuthProvider>
   );
 }

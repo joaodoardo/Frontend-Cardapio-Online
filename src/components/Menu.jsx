@@ -4,6 +4,11 @@ import { useSchedule } from '../contexts/ScheduleContext';
 import styles from '../styles';
 import { API_BASE_URL } from '../config';
 import StyledButton from './StyledButton';
+import PizzaCustomizationModal from './PizzaCustomizationModal';
+
+// ✅ IMAGEM PADRÃO DEFINIDA LOCALMENTE (COMO SUGERIDO PELO SEU AMIGO)
+const PLACEHOLDER_IMAGE = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MDAiIGhlaWdodD0iNDAwIiB2aWV3Qm94PSIwIDAgMTUwIDEwMCI+CiAgICA8cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPgogICAgPHBhdGggZD0iTTMwIDgwIEw1MCA0MCBMNzAgNjAgTDEwMCAzMCBMMTMwIDcwIEwxNTAgNTAgTDE1MCAxMDAgTDAgMTAwIFoiIGZpbGw9IiNjY2MiLz4KICAgIDxjaXJjbGUgY3g9IjY1IiBjeT0iMzUiIHI9IjEwIiBmaWxsPSIjY2NjIi8+CiAgICA8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJjZW50cmFsIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZmlsbD0iI2FhYSI+Tk8gSU1BR0U8L3RleHQ+Cjwvc3ZnPg==";
+
 
 const Menu = () => {
     const { addToCart } = useCart();
@@ -13,6 +18,7 @@ const Menu = () => {
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [customizingPizza, setCustomizingPizza] = useState(null);
 
     const fetchAllData = useCallback(async () => {
         setLoading(true);
@@ -48,10 +54,25 @@ const Menu = () => {
         return items.filter(item => item.categoryId === selectedCategory);
     }, [selectedCategory, items]);
 
+    const pizzaItems = useMemo(() => {
+        const pizzaCategory = categories.find(c => c.nome.toLowerCase() === 'pizzas');
+        if (!pizzaCategory) return [];
+        return items.filter(item => item.categoryId === pizzaCategory.id);
+    }, [categories, items]);
+
+    const handleItemClick = (item) => {
+        const pizzaCategory = categories.find(c => c.nome.toLowerCase() === 'pizzas');
+        if (item.categoryId === pizzaCategory?.id) {
+            setCustomizingPizza(item);
+        } else {
+            addToCart(item);
+        }
+    };
+
     return (
         <>
-            <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-                <h2 style={{ color: '#4B5563', fontSize: '1.875rem', fontWeight: 'bold' }}>Nosso Cardápio</h2>
+            <div style={{ marginBottom: '2rem', textAlign: 'center', paddingTop: '2rem' }}>
+                <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>Nosso Cardápio</h2>
                 <p style={{ color: '#6B7280', marginTop: '0.5rem' }}>As melhores pizzas da região, feitas no brasa!</p>
             </div>
 
@@ -71,21 +92,39 @@ const Menu = () => {
                             </StyledButton>
                         ))}
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', paddingBottom: '2rem' }}>
                         {filteredItems.map(item => (
-                            <div key={item.id} style={{ ...styles.card, display: 'flex', flexDirection: 'column' }}>
+                            <div key={item.id} style={{ ...styles.card, display: 'flex', flexDirection: 'column', cursor: isOpen ? 'pointer' : 'default' }} onClick={() => isOpen && handleItemClick(item)}>
+                                <img 
+                                    src={item.imagemUrl || PLACEHOLDER_IMAGE} // ✅ LÓGICA ATUALIZADA
+                                    alt={item.nome}
+                                    style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '0.75rem 0.75rem 0 0', background: '#eee' }}
+                                />
                                 <div style={{ flexGrow: 1, padding: '1.5rem' }}>
-                                    <h3 style={{ color: '#4B5563', fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>{item.nome}</h3>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>{item.nome}</h3>
                                     <p style={{ color: '#4B5563', marginBottom: '1rem', flexGrow: 1 }}>{item.descricao}</p>
                                 </div>
                                 <div style={{ padding: '1.5rem', paddingTop: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#EA580C' }}>R$ {item.preco.toFixed(2)}</p>
-                                    <StyledButton onClick={() => addToCart(item)} disabled={!isOpen} title={!isOpen ? 'Loja fechada' : ''}>Adicionar</StyledButton>
+                                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#EA580C' }}>
+                                        {categories.find(c => c.id === item.categoryId)?.nome.toLowerCase() === 'pizzas' ? 'A partir de ' : ''}
+                                        R$ {item.preco.toFixed(2)}
+                                    </p>
+                                    <StyledButton disabled={!isOpen} title={!isOpen ? 'Loja fechada' : ''}>
+                                        {categories.find(c => c.id === item.categoryId)?.nome.toLowerCase() === 'pizzas' ? 'Montar' : 'Adicionar'}
+                                    </StyledButton>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </>
+            )}
+            {customizingPizza && (
+                <PizzaCustomizationModal 
+                    isOpen={!!customizingPizza}
+                    onClose={() => setCustomizingPizza(null)}
+                    basePizza={customizingPizza}
+                    allFlavors={pizzaItems}
+                />
             )}
         </>
     );

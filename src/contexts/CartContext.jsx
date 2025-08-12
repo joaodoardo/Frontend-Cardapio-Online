@@ -10,17 +10,22 @@ export const CartProvider = ({ children }) => {
 
     const addToCart = (item) => {
         setCartItems(prev => {
-            const existing = prev.find(i => i.id === item.id);
+            // Se for uma pizza customizada, ela recebe um ID único e é sempre adicionada como um novo item.
+            if (item.isCustomPizza) {
+                return [...prev, { ...item, cartId: `custom-${Date.now()}` }];
+            }
+            // Itens normais (bebidas, etc.) são agrupados se já existirem.
+            const existing = prev.find(i => i.id === item.id && !i.isCustomPizza);
             if (existing) { return prev.map(i => i.id === item.id ? { ...i, quantidade: i.quantidade + 1 } : i); }
-            return [...prev, { ...item, quantidade: 1 }];
+            return [...prev, { ...item, quantidade: 1, cartId: item.id }];
         });
         setIsCartOpen(true);
     };
 
-    const updateQuantity = (itemId, newQuantity) => {
+    const updateQuantity = (cartId, newQuantity) => {
         setCartItems(prev => {
-            if (newQuantity <= 0) { return prev.filter(i => i.id !== itemId); }
-            return prev.map(i => i.id === itemId ? { ...i, quantidade: newQuantity } : i);
+            if (newQuantity <= 0) { return prev.filter(i => i.cartId !== cartId); }
+            return prev.map(i => i.cartId === cartId ? { ...i, quantidade: newQuantity } : i);
         });
     };
 

@@ -1,57 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import React from 'react';
+import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { ScheduleProvider } from './contexts/ScheduleContext';
 import styles from './styles';
 
-//Componentes
+// Importa os componentes da página do cliente
 import Header from './components/Header';
 import StoreStatusBanner from './components/StoreStatusBanner';
 import Menu from './components/Menu';
 import CartSidebar from './components/CartSidebar';
-import AdminLogin from './components/AdminLogin';
-import AdminDashboard from './components/AdminDashboard';
 
-
-function AppViewManager() {
-    const [view, setView] = useState('menu');
-    const { isAuthenticated } = useAuth();
-    
-    useEffect(() => {
-        if (isAuthenticated && view === 'adminLogin') {
-            setView('adminDashboard');
-        }
-        if (!isAuthenticated && view === 'adminDashboard') {
-            setView('adminLogin');
-        }
-    }, [view, isAuthenticated]);
-
-    switch (view) {
-        case 'adminLogin':
-            return <AdminLogin setView={setView} />;
-        case 'adminDashboard':
-            return <AdminDashboard setView={setView} />;
-        case 'menu':
-        default:
-            return (
-                <div style={{ backgroundColor: '#fbf9fbff', minHeight: '100vh' }}>
-                    <Header setView={setView} />
-                    <StoreStatusBanner />
-                    <main style={styles.container}>
-                        <Menu />
-                    </main>
-                    <CartSidebar />
-                </div>
-            );
-    }
+function CustomerPage() {
+    return (
+        <div style={{ backgroundColor: '#F9FAFB', minHeight: '100vh' }}>
+            <Header />
+            <StoreStatusBanner />
+            <main style={styles.container}>
+                <Menu />
+            </main>
+            <CartSidebar />
+        </div>
+    );
 }
 
+// O App final que envolve a página do cliente com os "Contexts"
 function App() {
     return (
       <AuthProvider>
         <ScheduleProvider>
           <CartProvider>
-            <AppViewManager />
+            <CustomerPage />
           </CartProvider>
         </ScheduleProvider>
       </AuthProvider>
