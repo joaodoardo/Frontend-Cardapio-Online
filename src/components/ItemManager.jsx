@@ -15,24 +15,33 @@ const ItemManager = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
 
+    // 1. ATUALIZADO PARA USAR A NOVA ROTA DE ADMIN E SER MAIS EFICIENTE
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
+            // Busca as categorias para passar ao modal
             const catResponse = await fetch(`${API_BASE_URL}/categorias`);
             if (!catResponse.ok) throw new Error('Falha ao buscar categorias.');
-            const catData = await catResponse.json();
-            setCategories(catData);
+            setCategories(await catResponse.json());
             
-            if (catData.length > 0) {
-                const itemsPromises = catData.map(cat => fetch(`${API_BASE_URL}/categorias/${cat.id}/itens`).then(res => res.json()));
-                const allItemsArrays = await Promise.all(itemsPromises);
-                setItems(allItemsArrays.flat());
-            }
-            setError('');
-        } catch (err) { setError(err.message); } finally { setIsLoading(false); }
-    }, []);
+            // Busca TODOS os itens (incluindo os indisponíveis) pela nova rota de admin
+            const itemsResponse = await fetch(`${API_BASE_URL}/admin/items`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!itemsResponse.ok) throw new Error('Falha ao buscar os itens.');
+            setItems(await itemsResponse.json());
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+            setError('');
+        } catch (err) { 
+            setError(err.message); 
+        } finally { 
+            setIsLoading(false); 
+        }
+    }, [token]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const handleOpenModal = (item = null) => { setEditingItem(item); setIsModalOpen(true); };
     const handleCloseModal = () => { setIsModalOpen(false); setEditingItem(null); fetchData(); };
@@ -40,10 +49,31 @@ const ItemManager = () => {
     const handleDelete = async (itemId) => {
         if (!window.confirm('Tem certeza que deseja excluir este item?')) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/admin/item/${itemId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            const response = await fetch(`${API_BASE_URL}/admin/item/${itemId}`, { 
+                method: 'DELETE', 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            });
             if (!response.ok) throw new Error('Falha ao excluir o item.');
             fetchData();
         } catch (err) { alert(err.message); }
+    };
+
+    // 2. NOVA FUNÇÃO PARA ALTERNAR A DISPONIBILIDADE DO ITEM
+    const handleToggleAvailability = async (item) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/item/${item.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ ...item, disponivel: !item.disponivel })
+            });
+            if (!response.ok) throw new Error('Falha ao atualizar o status.');
+            fetchData(); // Recarrega a lista para mostrar a mudança
+        } catch (err) {
+            alert(err.message);
+        }
     };
 
     return (
@@ -55,16 +85,48 @@ const ItemManager = () => {
             <div style={{borderTop: '1px solid #E5E7EB', overflowX: 'auto'}}>
                 {isLoading ? <p style={{padding: '1.5rem'}}>Carregando...</p> : error ? <p style={{padding: '1.5rem', color: 'red'}}>{error}</p> : (
                     <table style={styles.table}>
-                        <thead style={styles.tableHead}><tr><th style={styles.tableHeadCell}>Nome</th><th style={styles.tableHeadCell}>Preço</th><th style={styles.tableHeadCell}>Ações</th></tr></thead>
+                        <thead style={styles.tableHead}>
+                            <tr>
+                                <th style={styles.tableHeadCell}>Nome</th>
+                                <th style={styles.tableHeadCell}>Preço</th>
+                                {/* 3. ADICIONADA A COLUNA DE STATUS */}
+                                <th style={styles.tableHeadCell}>Status</th>
+                                <th style={styles.tableHeadCell}>Ações</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             {items.map(item => (
                                 <tr key={item.id} style={styles.tableBodyRow}>
                                     <td style={{...styles.tableBodyCell, fontWeight: 500, color: '#111827'}}>{item.nome}</td>
                                     <td style={styles.tableBodyCell}>R$ {item.preco.toFixed(2)}</td>
-                                    <td style={styles.tableBodyCell}><div style={{display: 'flex', gap: '0.25rem'}}>
-                                        <StyledButton variant="ghost" style={{padding: '0.25rem', color: '#686868ff'}} onClick={() => handleOpenModal(item)}><EditIcon style={{width: '1.25rem', height: '1.25rem'}}/></StyledButton>
-                                        <StyledButton variant="ghost" style={{padding: '0.25rem', color: '#DC2626'}} onClick={() => handleDelete(item.id)}><TrashIcon style={{width: '1.25rem', height: '1.25rem'}}/></StyledButton>
-                                    </div></td>
+                                    {/* EXIBE O STATUS ATUAL DO ITEM */}
+                                    <td style={styles.tableBodyCell}>
+                                        <span style={{
+                                            backgroundColor: item.disponivel ? '#D1FAE5' : '#FEE2E2',
+                                            color: item.disponivel ? '#065F46' : '#991B1B',
+                                            padding: '0.25rem 0.75rem',
+                                            borderRadius: '9999px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 500,
+                                        }}>
+                                            {item.disponivel ? 'Disponível' : 'Indisponível'}
+                                        </span>
+                                    </td>
+                                    <td style={styles.tableBodyCell}>
+                                        <div style={{display: 'flex', gap: '0.25rem'}}>
+                                            {/* 4. ADICIONADO BOTÃO DE AÇÃO RÁPIDA */}
+                                            <StyledButton 
+                                                variant="secondary" 
+                                                onClick={() => handleToggleAvailability(item)} 
+                                                title={item.disponivel ? 'Pausar item' : 'Ativar item'}
+                                                style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem' }}
+                                            >
+                                                {item.disponivel ? 'Pausar' : 'Ativar'}
+                                            </StyledButton>
+                                            <StyledButton variant="ghost" onClick={() => handleOpenModal(item)} title="Editar item"><EditIcon style={{width: '1.25rem', height: '1.25rem'}}/></StyledButton>
+                                            <StyledButton variant="ghost" onClick={() => handleDelete(item.id)} title="Excluir item" style={{color: '#DC2626'}}><TrashIcon style={{width: '1.25rem', height: '1.25rem'}}/></StyledButton>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

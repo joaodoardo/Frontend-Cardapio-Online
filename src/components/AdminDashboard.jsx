@@ -6,10 +6,23 @@ import ItemManager from './ItemManager';
 import CategoryManager from './CategoryManager';
 import ScheduleManager from './ScheduleManager';
 import PedidoManager from './pedidoManager';
+import PedidoHistorico from './PedidoHistorico'; // 1. IMPORTA O NOVO COMPONENTE
 
 const AdminDashboard = ({ setView }) => {
     const { logout } = useAuth();
     const [activeTab, setActiveTab] = useState('pedidos');
+    
+    // Função para simplificar o estilo dos botões da aba
+    const getTabStyle = (tabName) => ({
+        background:'none', 
+        border:'none', 
+        cursor:'pointer', 
+        paddingBottom: '1rem', 
+        borderBottom: activeTab === tabName ? '2px solid #EA580C' : '2px solid transparent', 
+        color: activeTab === tabName ? '#EA580C' : '#6B7280', 
+        fontWeight: 500
+    });
+
     return (
         <div style={{minHeight: '100vh', backgroundColor: '#F9FAFB'}}>
             <header style={{backgroundColor: 'white', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)'}}>
@@ -21,14 +34,20 @@ const AdminDashboard = ({ setView }) => {
             <main style={{...styles.container, padding: '2rem 1rem'}}>
                 <div style={{borderBottom: '1px solid #E5E7EB', marginBottom: '1.5rem'}}>
                     <nav style={{display: 'flex', gap: '2rem', flexWrap: 'wrap'}}>
-                        <button onClick={() => setActiveTab('pedidos')} style={{background:'none', border:'none', cursor:'pointer', paddingBottom: '1rem', borderBottom: activeTab === 'pedidos' ? '2px solid #EA580C' : '2px solid transparent', color: activeTab === 'pedidos' ? '#EA580C' : '#6B7280', fontWeight: 500}}>Gerenciar Pedidos</button>
-                        <button onClick={() => setActiveTab('items')} style={{background:'none', border:'none', cursor:'pointer', paddingBottom: '1rem', borderBottom: activeTab === 'items' ? '2px solid #EA580C' : '2px solid transparent', color: activeTab === 'items' ? '#EA580C' : '#6B7280', fontWeight: 500}}>Gerenciar Itens</button>
-                        <button onClick={() => setActiveTab('categories')} style={{background:'none', border:'none', cursor:'pointer', paddingBottom: '1rem', borderBottom: activeTab === 'categories' ? '2px solid #EA580C' : '2px solid transparent', color: activeTab === 'categories' ? '#EA580C' : '#6B7280', fontWeight: 500}}>Gerenciar Categorias</button>
-                        <button onClick={() => setActiveTab('schedule')} style={{background:'none', border:'none', cursor:'pointer', paddingBottom: '1rem', borderBottom: activeTab === 'schedule' ? '2px solid #EA580C' : '2px solid transparent', color: activeTab === 'schedule' ? '#EA580C' : '#6B7280', fontWeight: 500}}>Horários de Funcionamento</button>
+                        <button onClick={() => setActiveTab('pedidos')} style={getTabStyle('pedidos')}>Pedidos Ativos</button>
+                        
+                        <button onClick={() => setActiveTab('historico')} style={getTabStyle('historico')}>Histórico</button>
+
+                        <button onClick={() => setActiveTab('items')} style={getTabStyle('items')}>Itens</button>
+                        <button onClick={() => setActiveTab('categories')} style={getTabStyle('categories')}>Categorias</button>
+                        <button onClick={() => setActiveTab('schedule')} style={getTabStyle('schedule')}>Horários</button>
                     </nav>
                 </div>
                 <div>
                     {activeTab === 'pedidos' && <PedidoManager />}
+                    
+                    {activeTab === 'historico' && <PedidoHistorico />}
+
                     {activeTab === 'items' && <ItemManager />}
                     {activeTab === 'categories' && <CategoryManager />}
                     {activeTab === 'schedule' && <ScheduleManager />}

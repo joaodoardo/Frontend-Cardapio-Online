@@ -10,9 +10,11 @@ const PLACEHOLDER_IMAGE = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d
 
 const ItemFormModal = ({ isOpen, onClose, item, categories }) => {
     const { token } = useAuth();
-    const [formData, setFormData] = useState({ nome: '', descricao: '', preco: '', categoriaId: '', imagemUrl: '' });
+    // 1. ADICIONADO 'disponivel' AO ESTADO INICIAL
+    const [formData, setFormData] = useState({ nome: '', descricao: '', preco: '', categoriaId: '', imagemUrl: '', disponivel: true });
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    
     const handleChange = (e) => setFormData({...formData, [e.target.name]: e.target.value });
 
     useEffect(() => {
@@ -23,10 +25,20 @@ const ItemFormModal = ({ isOpen, onClose, item, categories }) => {
                     descricao: item.descricao || '', 
                     preco: item.preco || '', 
                     categoriaId: item.categoriaId || '',
-                    imagemUrl: item.imagemUrl || ''
+                    imagemUrl: item.imagemUrl || '',
+                    // 2. POPULA O ESTADO 'disponivel' AO EDITAR UM ITEM
+                    disponivel: item.disponivel ?? true 
                 });
             } else {
-                setFormData({ nome: '', descricao: '', preco: '', categoriaId: categories.length > 0 ? categories[0].id : '', imagemUrl: '' });
+                setFormData({ 
+                    nome: '', 
+                    descricao: '', 
+                    preco: '', 
+                    categoriaId: categories.length > 0 ? categories[0].id : '', 
+                    imagemUrl: '',
+                    // GARANTE O VALOR PADRÃO NA CRIAÇÃO
+                    disponivel: true 
+                });
             }
         }
     }, [item, categories, isOpen]);
@@ -35,6 +47,7 @@ const ItemFormModal = ({ isOpen, onClose, item, categories }) => {
         e.preventDefault(); setIsLoading(true); setError('');
         const url = item ? `${API_BASE_URL}/admin/item/${item.id}` : `${API_BASE_URL}/admin/item`;
         const method = item ? 'PUT' : 'POST';
+        // O campo 'disponivel' já está no formData, então o body será enviado corretamente
         const body = { ...formData, preco: parseFloat(formData.preco), categoriaId: parseInt(formData.categoriaId) };
         if (!body.nome || !body.preco || !body.categoriaId) { setError('Nome, preço e categoria são obrigatórios.'); setIsLoading(false); return; }
 
@@ -68,8 +81,22 @@ const ItemFormModal = ({ isOpen, onClose, item, categories }) => {
                             />
                         </div>
 
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <input
+                                type="checkbox"
+                                id="disponivel"
+                                name="disponivel"
+                                checked={formData.disponivel}
+                                onChange={(e) => setFormData({ ...formData, disponivel: e.target.checked })}
+                                style={{ height: '1rem', width: '1rem', cursor: 'pointer' }}
+                            />
+                            <label htmlFor="disponivel" style={{ ...styles.label, marginBottom: 0, cursor: 'pointer' }}>
+                                Item Disponível para Venda
+                            </label>
+                        </div>
+
                         {error && <p style={{color: 'red', fontSize: '0.875rem'}}>{error}</p>}
-                        <div style={{display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', paddingTop: '1rem'}}><StyledButton type="button" variant="secondary" onClick={onClose}>Cancelar</StyledButton><StyledButton type="submit" disabled={isLoading}>{isLoading ? 'Salvando...' : 'Salvar'}</StyledButton></div>
+                        <div style={{display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', paddingTop: '1rem', borderTop: '1px solid #E5E7EB', marginTop: '1rem'}}><StyledButton type="button" variant="secondary" onClick={onClose}>Cancelar</StyledButton><StyledButton type="submit" disabled={isLoading}>{isLoading ? 'Salvando...' : 'Salvar'}</StyledButton></div>
                     </form>
                 </div>
             </div>

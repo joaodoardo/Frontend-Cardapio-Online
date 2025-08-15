@@ -35,11 +35,10 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
         const { nomeCliente, telefone, endereco } = formData;
         if (!nomeCliente || !telefone || !endereco) { setError('Por favor, preencha nome, telefone e endereço.'); return; }
         
-        let finalObservacoes = formData.observacoes;
+        // ALTERAÇÃO 1: Lógica de observações simplificada.
         const itemsParaBackend = cartItems.map(item => {
             if (item.isCustomPizza) {
-                const pizzaDetails = `PIZZA: ${item.nome} (Tamanho: ${item.tamanho}, Sabores: ${item.sabores.map(s => s.nome).join(' / ')})`;
-                finalObservacoes = `${finalObservacoes}\n- ${pizzaDetails}`;
+                // As linhas que adicionavam detalhes à observação foram removidas.
                 return { itemId: item.baseItemId, quantidade: item.quantidade };
             }
             return { itemId: item.id, quantidade: item.quantidade };
@@ -48,7 +47,7 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
         setError(''); setIsLoading(true);
         const pedido = { 
             ...formData, 
-            observacoes: finalObservacoes.trim(), 
+            observacoes: formData.observacoes.trim(), // Usando diretamente o valor do formulário
             itens: itemsParaBackend,
             metodoPagamento: paymentMethod,
             trocoPara: paymentMethod === 'Dinheiro' && trocoPara ? parseFloat(trocoPara) : null,
@@ -59,15 +58,35 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
             if (!r.ok) throw new Error('Falha ao enviar o pedido.');
             const res = await r.json();
             setSuccess({ message: `Pedido #${res.pedidoId} realizado com sucesso!`, pedidoId: res.pedidoId, paymentMethod });
-            // Limpa o carrinho para todos os métodos, exceto Pix
+            
+            // ALTERAÇÃO 2: Salva os dados do cliente no localStorage após o sucesso.
+            const customerDataToSave = {
+                nomeCliente: formData.nomeCliente,
+                telefone: formData.telefone,
+                endereco: formData.endereco,
+            };
+            localStorage.setItem('customerData', JSON.stringify(customerDataToSave));
+
             if (paymentMethod !== 'Pix') {
                 clearCart();
             }
         } catch (err) { setError(err.message || 'Ocorreu um erro.'); } finally { setIsLoading(false); }
     };
 
+    // ALTERAÇÃO 3: useEffect modificado para carregar dados do localStorage.
     useEffect(() => { 
-        if (!isOpen) { 
+        if (isOpen) {
+            const savedData = localStorage.getItem('customerData');
+            if (savedData) {
+                const { nomeCliente, telefone, endereco } = JSON.parse(savedData);
+                setFormData({
+                    nomeCliente: nomeCliente || '',
+                    telefone: telefone || '',
+                    endereco: endereco || '',
+                    observacoes: '' 
+                });
+            }
+        } else {
             setFormData({ nomeCliente: '', telefone: '', endereco: '', observacoes: '' }); 
             setError(''); setSuccess(null); setIsLoading(false); setPaymentMethod('Dinheiro'); setTrocoPara('');
         }
