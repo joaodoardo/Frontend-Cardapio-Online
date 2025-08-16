@@ -104,7 +104,7 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
                     <h3 style={{fontSize: '1.125rem', fontWeight: 600}}>
                         {success ? 'Pedido Enviado!' : 'Finalizar Pedido'}
                     </h3>
-                    <StyledButton variant="ghost" onClick={onClose} style={{padding: '0.25rem'}}><XIcon /></StyledButton>
+                    <StyledButton onClick={onClose} style={{padding: '0.25rem'}}><XIcon /></StyledButton>
                 </div>
                 <div style={styles.modalBody}>
                     {success ? (

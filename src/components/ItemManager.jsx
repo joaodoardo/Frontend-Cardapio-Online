@@ -123,7 +123,7 @@ const ItemManager = () => {
                                             >
                                                 {item.disponivel ? 'Pausar' : 'Ativar'}
                                             </StyledButton>
-                                            <StyledButton variant="ghost" onClick={() => handleOpenModal(item)} title="Editar item"><EditIcon style={{width: '1.25rem', height: '1.25rem'}}/></StyledButton>
+                                            <StyledButton variant="ghost" onClick={() => handleOpenModal(item)} title="Editar item"><EditIcon style={{color: '#777777ff', width: '1.25rem', height: '1.25rem'}}/></StyledButton>
                                             <StyledButton variant="ghost" onClick={() => handleDelete(item.id)} title="Excluir item" style={{color: '#DC2626'}}><TrashIcon style={{width: '1.25rem', height: '1.25rem'}}/></StyledButton>
                                         </div>
                                     </td>

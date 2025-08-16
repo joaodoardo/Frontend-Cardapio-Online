@@ -15,8 +15,8 @@ const StoreStatusBanner = () => {
     return (
         <div style={bannerStyle}>
             <div style={{ ...styles.container, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                <ClockIcon style={{ width: '1.25rem', height: '1.25rem' }} />
-                <span>{storeStatusMessage}</span>
+                <ClockIcon style={{ width: '1.25rem', height: '1.25rem', color: 'white' }} />
+                <span style={{color: 'white'}}>{storeStatusMessage}</span>
             </div>
         </div>
     );

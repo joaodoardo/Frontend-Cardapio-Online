@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 // Visto que não tenho seu componente StyledButton, criarei um Card de Pedido separado
 // import StyledButton from './StyledButton'; 
 import PedidoCard from './PedidoCard'; // ATUALIZAÇÃO 2: Importar o novo componente de card
+import { API_BASE_URL } from '../config';
 
 const PedidoManager = () => {
     // ATUALIZAÇÃO 3: Criar um estado para armazenar os pedidos
@@ -23,7 +24,7 @@ const PedidoManager = () => {
                 return;
             }
 
-            const response = await fetch('http://localhost:3000/admin/pedidos', {
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -56,7 +57,7 @@ const PedidoManager = () => {
     // ATUALIZAÇÃO 6: Função para lidar com a mudança de status, que será passada para o PedidoCard
     const handleStatusChange = async (pedidoId, novoStatus) => {
         try {
-            const response = await fetch(`http://localhost:3000/admin/pedidos/${pedidoId}/status`, {
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${pedidoId}/status`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -87,7 +88,7 @@ const PedidoManager = () => {
 
                 {/* Coluna "Em análise" */}
                 <div style={{backgroundColor: '#d4652f', height: '100%', width: '30%', display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto', }}>
-                    <div style={{backgroundColor: '#0000003f', width: '100%', height: "10%", display: 'flex', justifyContent: "center", alignItems: "center", flexShrink: 0}}><h3>Em análise</h3></div>
+                    <div style={{color: 'white', backgroundColor: '#0000003f', width: '100%', height: "10%", display: 'flex', justifyContent: "center", alignItems: "center", flexShrink: 0}}><h3>Em análise</h3></div>
                     {/* ATUALIZAÇÃO 7: Mapear e exibir os pedidos com status 1 */}
                     {pedidos.filter(p => p.status === 1).map(pedido => (
                         <PedidoCard key={pedido.id} pedido={pedido} onStatusChange={handleStatusChange} />
@@ -96,7 +97,7 @@ const PedidoManager = () => {
 
                 {/* Coluna "Em produção" */}
                 <div style={{backgroundColor: '#e8a234', height: '100%', width: '30%',  display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto'}}>
-                    <div style={{backgroundColor: '#0000003f', width: '100%', height: "10%", display: 'flex', justifyContent: "center", alignItems: "center", flexShrink: 0}}><h3>Em produção</h3></div>
+                    <div style={{color: 'white', backgroundColor: '#0000003f', width: '100%', height: "10%", display: 'flex', justifyContent: "center", alignItems: "center", flexShrink: 0}}><h3>Em produção</h3></div>
                     {/* ATUALIZAÇÃO 8: Mapear e exibir os pedidos com status 2 */}
                     {pedidos.filter(p => p.status === 2).map(pedido => (
                         <PedidoCard key={pedido.id} pedido={pedido} onStatusChange={handleStatusChange} />
@@ -105,7 +106,7 @@ const PedidoManager = () => {
 
                 {/* Coluna "Pronto para entrega" */}
                 <div style={{backgroundColor: '#5ab44f', height: '100%', width: '30%',  display: 'flex', flexDirection: 'column', gap: '1.5rem', overflowY: 'auto'}}>
-                    <div style={{backgroundColor: '#0000003f', width: '100%', height: "10%", display: 'flex', justifyContent: "center", alignItems: "center", flexShrink: 0}}><h3>Pronto para entrega</h3></div>
+                    <div style={{color: 'white', backgroundColor: '#0000003f', width: '100%', height: "10%", display: 'flex', justifyContent: "center", alignItems: "center", flexShrink: 0}}><h3>Pronto para entrega</h3></div>
                     {/* ATUALIZAÇÃO 9: Mapear e exibir os pedidos com status 3 */}
                     {pedidos.filter(p => p.status === 3).map(pedido => (
                         <PedidoCard key={pedido.id} pedido={pedido} onStatusChange={handleStatusChange} />

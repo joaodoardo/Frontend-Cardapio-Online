@@ -63,7 +63,7 @@ const ItemFormModal = ({ isOpen, onClose, item, categories }) => {
     return (
         <div style={styles.modalOverlay}>
             <div style={styles.modalContent}>
-                <div style={styles.modalHeader}><h3 style={{fontSize: '1.125rem', fontWeight: 600}}>{item ? "Editar Item" : "Adicionar Item"}</h3><StyledButton variant="ghost" onClick={onClose} style={{padding: '0.25rem'}}><XIcon/></StyledButton></div>
+                <div style={styles.modalHeader}><h3 style={{fontSize: '1.125rem', fontWeight: 600}}>{item ? "Editar Item" : "Adicionar Item"}</h3><StyledButton onClick={onClose} style={{padding: '0.25rem'}}><XIcon/></StyledButton></div>
                 <div style={styles.modalBody}>
                     <form onSubmit={handleSubmit} style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
                         <div><label style={styles.label}>Nome do Item</label><input style={styles.input} name="nome" value={formData.nome} onChange={handleChange} required/></div>

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { API_BASE_URL } from '../config';
 
-// O objeto statusInfo continua útil para mapear status para texto e cor
+// O objeto statusInfo continua o mesmo
 const statusInfo = {
     1: { texto: "Em Análise", cor: "#d4652f", emoji: "🧐" },
     2: { texto: "Em Produção", cor: "#e8a234", emoji: "🧑‍🍳" },
@@ -8,7 +9,7 @@ const statusInfo = {
     4: { texto: "Finalizado / Entregue", cor: "#4B5563", emoji: "✅" }
 };
 
-// ATUALIZAÇÃO 1: Adicionar e refinar estilos para o novo layout de card
+// Os estilos continuam os mesmos
 const styles = {
     container: {
         maxWidth: '700px',
@@ -45,10 +46,9 @@ const styles = {
         borderRadius: '4px',
         cursor: 'pointer'
     },
-    // Estilo para o card de cada pedido
     pedidoCard: {
         backgroundColor: 'white',
-        borderLeft: '5px solid #ccc', // A cor será definida dinamicamente
+        borderLeft: '5px solid #ccc',
         borderRadius: '4px',
         padding: '1rem 1.5rem',
         marginBottom: '1rem',
@@ -67,21 +67,23 @@ const styles = {
 const PedidosStatus = () => {
     const [telefone, setTelefone] = useState('');
     const [pedidos, setPedidos] = useState([]);
-    // ATUALIZAÇÃO 2: Adicionar estado para o nome do cliente e remover pedidoSelecionado
     const [nomeCliente, setNomeCliente] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleBuscarPedidos = async (e) => {
-        e.preventDefault();
+    // ======================================================================
+    // ✅ INÍCIO DA ALTERAÇÃO 1: LÓGICA DE BUSCA REATORADA
+    // ======================================================================
+    const buscarPedidosPorTelefone = useCallback(async (numeroParaBuscar) => {
+        if (!numeroParaBuscar) return;
+
         setIsLoading(true);
         setError('');
         setPedidos([]);
-        // Reseta o nome do cliente a cada nova busca
         setNomeCliente('');
 
         try {
-            const response = await fetch(`http://localhost:3000/pedidos/cliente/${telefone}`);
+            const response = await fetch(`${API_BASE_URL}/pedidos/cliente/${numeroParaBuscar}`);
             const data = await response.json();
 
             if (!response.ok) {
@@ -89,25 +91,57 @@ const PedidosStatus = () => {
             }
             
             setPedidos(data);
-            // ATUALIZAÇÃO 3: Define o nome do cliente a partir do pedido mais recente
             if (data.length > 0) {
                 setNomeCliente(data[0].nomeCliente);
             }
 
         } catch (err) {
             setError(err.message);
+            setPedidos([]); // Limpa os pedidos em caso de erro
         } finally {
             setIsLoading(false);
         }
+    }, []); // useCallback para evitar recriação desnecessária da função
+
+    // O handler do formulário agora apenas chama a função de busca
+    const handleFormSubmit = (e) => {
+        e.preventDefault();
+        buscarPedidosPorTelefone(telefone);
     };
+    // ======================================================================
+    // ✅ FIM DA ALTERAÇÃO 1
+    // ======================================================================
+
+
+    // ======================================================================
+    // ✅ INÍCIO DA ALTERAÇÃO 2: useEffect PARA BUSCA AUTOMÁTICA
+    // ======================================================================
+    useEffect(() => {
+        // Tenta buscar os dados do cliente no localStorage
+        const savedDataString = localStorage.getItem('customerData');
+        if (savedDataString) {
+            const savedData = JSON.parse(savedDataString);
+            if (savedData.telefone) {
+                console.log(`Telefone encontrado no localStorage: ${savedData.telefone}. Buscando pedidos...`);
+                // Define o telefone no estado para preencher o input
+                setTelefone(savedData.telefone);
+                // Chama a função de busca com o número encontrado
+                buscarPedidosPorTelefone(savedData.telefone);
+            }
+        }
+    }, [buscarPedidosPorTelefone]); // A dependência agora é a função memoizada
+    // ======================================================================
+    // ✅ FIM DA ALTERAÇÃO 2
+    // ======================================================================
+
     
-    // ATUALIZAÇÃO 4: Simplificar o useEffect para apenas atualizar a lista de pedidos
+    // useEffect para atualização automática (polling) continua o mesmo
     useEffect(() => {
         if (telefone && pedidos.length > 0) {
             const intervalId = setInterval(async () => {
                 console.log(`Atualizando automaticamente pedidos para o telefone: ${telefone}`);
                 try {
-                    const response = await fetch(`http://localhost:3000/pedidos/cliente/${telefone}`);
+                    const response = await fetch(`${API_BASE_URL}/pedidos/cliente/${telefone}`);
                     const data = await response.json();
                     if (response.ok) {
                         setPedidos(data); // Apenas atualiza a lista
@@ -119,7 +153,7 @@ const PedidosStatus = () => {
 
             return () => clearInterval(intervalId);
         }
-    }, [telefone, pedidos.length]); // A dependência de 'pedidos' foi simplificada para 'pedidos.length'
+    }, [telefone, pedidos.length]);
 
 
     const formatarData = (dataString) => {
@@ -129,7 +163,6 @@ const PedidosStatus = () => {
 
     return (
         <div style={styles.container}>
-            {/* ATUALIZAÇÃO 5: Mostrar a saudação personalizada quando o nome do cliente existir */}
             {nomeCliente ? (
                 <h2 style={styles.greeting}>Olá, {nomeCliente}!</h2>
             ) : (
@@ -138,7 +171,8 @@ const PedidosStatus = () => {
 
             <p>Digite o número de telefone usado no pedido para ver o status.</p>
             
-            <form onSubmit={handleBuscarPedidos}>
+            {/* O formulário agora chama handleFormSubmit */}
+            <form onSubmit={handleFormSubmit}>
                 <input 
                     type="tel"
                     value={telefone}
@@ -154,12 +188,11 @@ const PedidosStatus = () => {
 
             {error && <p style={{ color: 'red', textAlign: 'center', marginTop: '1rem' }}>{error}</p>}
 
-            {/* ATUALIZAÇÃO 6: Mudar a renderização para mostrar um card completo por pedido */}
+            {/* O restante do JSX para renderizar os pedidos permanece o mesmo */}
             {pedidos.length > 0 && (
                 <div style={{ marginTop: '2rem' }}>
                     <h3>Seus pedidos recentes:</h3>
                     {pedidos.map(p => {
-                        // Calcula o valor total do pedido
                         const valorTotal = p.itens.reduce((total, itemPedido) => {
                             return total + (itemPedido.item.preco * itemPedido.quantidade);
                         }, 0);
@@ -200,7 +233,6 @@ const PedidosStatus = () => {
                     })}
                 </div>
             )}
-            {/* O bloco do pedido selecionado foi completamente removido */}
         </div>
     );
 };

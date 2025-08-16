@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom'; // Importa o Link
 import { useCart } from '../contexts/CartContext';
 import styles from '../styles';
-import { PizzaIcon, ShoppingCartIcon, UserCogIcon } from './Icons';
+import { PizzaIcon, ShoppingCartIcon, PedidoIcon } from './Icons';
 
 const Header = () => { // A prop setView foi removida daqui
     const { isCartOpen, setIsCartOpen, cartItemCount } = useCart();
@@ -15,8 +15,8 @@ const Header = () => { // A prop setView foi removida daqui
                         <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1F2937', letterSpacing: '-0.025em' }}>La Brasa Pizzaria</h1>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Link to="/adm" title="Acesso Administrativo" style={{ padding: '0.5rem', borderRadius: '9999px', background: 'transparent', border: 'none', cursor: 'pointer' }}>
-                            <UserCogIcon style={{ height: '1.5rem', width: '1.5rem', color: '#4B5563' }} />
+                        <Link to="/pedidos" title="Acompanhe seu Pedido" style={{ padding: '0.5rem', borderRadius: '9999px', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                            <h4>Meus Pedidos</h4>
                         </Link>
                         <button onClick={() => setIsCartOpen(!isCartOpen)} style={{ position: 'relative', padding: '0.5rem', borderRadius: '9999px', background: 'transparent', border: 'none', cursor: 'pointer' }}>
                             <ShoppingCartIcon style={{ height: '1.5rem', width: '1.5rem', color: '#374151' }} />

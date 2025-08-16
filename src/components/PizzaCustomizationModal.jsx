@@ -68,7 +68,7 @@ const PizzaCustomizationModal = ({ isOpen, onClose, basePizza, allFlavors }) => 
             <div style={{...styles.modalContent, maxWidth: '600px'}}>
                 <div style={styles.modalHeader}>
                     <h3 style={{fontSize: '1.125rem', fontWeight: 600}}>Monte sua Pizza</h3>
-                    <StyledButton variant="ghost" onClick={onClose} style={{padding: '0.25rem'}}><XIcon/></StyledButton>
+                    <StyledButton onClick={onClose} style={{padding: '0.25rem'}}><XIcon/></StyledButton>
                 </div>
                 <div style={styles.modalBody}>
                     {/* SELEÇÃO DE TAMANHO */}
