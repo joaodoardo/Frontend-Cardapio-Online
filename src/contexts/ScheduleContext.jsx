@@ -1,5 +1,6 @@
 import React, { useState, createContext, useContext, useMemo, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE_URL } from '../config';
 
 const ScheduleContext = createContext();
 
@@ -28,7 +29,7 @@ export const ScheduleProvider = ({ children }) => {
     useEffect(() => {
         const fetchSchedule = async () => {
             try {
-                const response = await fetch('http://localhost:3000/horarios');
+                const response = await fetch(`${API_BASE_URL}/horarios`);
                 if (!response.ok) {
                     throw new Error('Falha ao buscar dados da API');
                 }
@@ -69,7 +70,7 @@ export const ScheduleProvider = ({ children }) => {
                 fim: newScheduleObject[key].end
             }));
 
-            const response = await fetch('http://localhost:3000/admin/horarios', {
+            const response = await fetch(`${API_BASE_URL}/admin/horarios`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
