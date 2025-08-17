@@ -98,8 +98,8 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`;
 
     return (
-        <div style={styles.modalOverlay}>
-            <div style={styles.modalContent}>
+        <div style={{...styles.modalOverlay, zIndex: 60}}>
+            <div style={{...styles.modalContent, zIndex: 61}}>
                 <div style={styles.modalHeader}>
                     <h3 style={{fontSize: '1.125rem', fontWeight: 600}}>
                         {success ? 'Pedido Enviado!' : 'Finalizar Pedido'}
