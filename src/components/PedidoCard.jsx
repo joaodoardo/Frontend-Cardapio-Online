@@ -1,5 +1,3 @@
-// frontend/PedidoCard.js
-
 import React from 'react';
 
 // Estilos para os botões e o card para não poluir o componente
@@ -36,9 +34,13 @@ const PedidoCard = ({ pedido, onStatusChange }) => {
         });
     };
     
-    // Calcula o total do pedido
+    // ✅ ALTERAÇÃO 1: Corrigido o cálculo do total do pedido
+    // Agora, ele prioriza o 'precoFinal' salvo no item do pedido.
+    // O '??' (operador de coalescência nula) usa o preço base do item como um fallback
+    // caso 'precoFinal' não exista (para pedidos antigos ou itens normais).
     const totalPedido = pedido.itens.reduce((acc, itemPedido) => {
-        return acc + (itemPedido.item.preco * itemPedido.quantidade);
+        const precoItem = itemPedido.precoFinal ?? itemPedido.item.preco;
+        return acc + (precoItem * itemPedido.quantidade);
     }, 0).toFixed(2);
 
     return (
@@ -52,8 +54,17 @@ const PedidoCard = ({ pedido, onStatusChange }) => {
             <strong>Itens:</strong>
             <ul style={{ listStyle: 'none', paddingLeft: '0', fontSize: '0.9em' }}>
                 {pedido.itens.map(itemPedido => (
-                    <li key={itemPedido.id}>
-                        {itemPedido.quantidade}x {itemPedido.item.nome}
+                    // ✅ ALTERAÇÃO 2: Exibição do item corrigida
+                    <li key={itemPedido.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span>
+                            {itemPedido.quantidade}x {itemPedido.item.nome}
+                            {/* Mostra o tamanho da pizza, se ele existir no pedido */}
+                            {itemPedido.tamanho && <strong style={{ color: '#EA580C' }}> ({itemPedido.tamanho})</strong>}
+                        </span>
+                        {/* Mostra o preço individual do item no momento da compra */}
+                        <span>
+                            R$ {(itemPedido.precoFinal ?? itemPedido.item.preco).toFixed(2)}
+                        </span>
                     </li>
                 ))}
             </ul>

@@ -7,6 +7,7 @@ import CategoryManager from './CategoryManager';
 import ScheduleManager from './ScheduleManager';
 import PedidoManager from './pedidoManager';
 import PedidoHistorico from './PedidoHistorico'; // 1. IMPORTA O NOVO COMPONENTE
+import FreteManager from './freteManager'; // ✅ 1. IMPORTA O NOVO COMPONENTE
 
 const AdminDashboard = ({ setView }) => {
     const { logout } = useAuth();
@@ -41,6 +42,7 @@ const AdminDashboard = ({ setView }) => {
                         <button onClick={() => setActiveTab('items')} style={getTabStyle('items')}>Itens</button>
                         <button onClick={() => setActiveTab('categories')} style={getTabStyle('categories')}>Categorias</button>
                         <button onClick={() => setActiveTab('schedule')} style={getTabStyle('schedule')}>Horários</button>
+                        <button onClick={() => setActiveTab('frete')} style={getTabStyle('frete')}>Frete</button>
                     </nav>
                 </div>
                 <div>
@@ -51,6 +53,7 @@ const AdminDashboard = ({ setView }) => {
                     {activeTab === 'items' && <ItemManager />}
                     {activeTab === 'categories' && <CategoryManager />}
                     {activeTab === 'schedule' && <ScheduleManager />}
+                    {activeTab === 'frete' && <FreteManager />}
                 </div>
             </main>
         </div>

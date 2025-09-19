@@ -1,20 +1,38 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useCart } from '../contexts/CartContext';
 import styles from '../styles';
 import StyledButton from './StyledButton';
 import { XIcon } from './Icons';
 
+// ✅ ALTERAÇÃO 1: Removido 'priceMultiplier', pois não é mais necessário.
 const SIZES = {
-    P: { name: 'P', flavors: 2, priceMultiplier: 0.8 },
-    M: { name: 'M', flavors: 2, priceMultiplier: 1.0 },
-    G: { name: 'G', flavors: 3, priceMultiplier: 1.2 },
-    GG: { name: 'GG', flavors: 3, priceMultiplier: 1.5 },
+    P: { name: 'P', flavors: 2 },
+    M: { name: 'M', flavors: 2 },
+    G: { name: 'G', flavors: 3 },
+    GG: { name: 'GG', flavors: 3 },
+};
+
+// Objeto para mapear o tamanho ao campo de preço correspondente no item
+const priceFieldMap = {
+    P: 'precoP',
+    M: 'precoM',
+    G: 'precoG',
+    GG: 'precoGG',
 };
 
 const PizzaCustomizationModal = ({ isOpen, onClose, basePizza, allFlavors }) => {
     const { addToCart } = useCart();
     const [selectedSize, setSelectedSize] = useState('M');
-    const [selectedFlavors, setSelectedFlavors] = useState([basePizza]);
+    const [selectedFlavors, setSelectedFlavors] = useState([]);
+
+    // Reseta o estado quando o modal é aberto com uma nova pizza base
+    useEffect(() => {
+        if (isOpen) {
+            setSelectedSize('M');
+            setSelectedFlavors([basePizza]);
+        }
+    }, [isOpen, basePizza]);
+
 
     const maxFlavors = SIZES[selectedSize].flavors;
 
@@ -33,10 +51,20 @@ const PizzaCustomizationModal = ({ isOpen, onClose, basePizza, allFlavors }) => 
         });
     };
     
+    // ✅ ALTERAÇÃO 2: Lógica de cálculo de preço totalmente refeita.
     const finalPrice = useMemo(() => {
         if (selectedFlavors.length === 0) return 0;
-        const maxPrice = Math.max(...selectedFlavors.map(f => f.preco));
-        return maxPrice * SIZES[selectedSize].priceMultiplier;
+
+        // Pega a chave do campo de preço, ex: 'precoM'
+        const priceKey = priceFieldMap[selectedSize];
+
+        // Mapeia os sabores selecionados para seus preços no tamanho escolhido.
+        // Se um sabor não tiver um preço específico para o tamanho, usa o preço base.
+        const pricesForSize = selectedFlavors.map(flavor => flavor[priceKey] || flavor.preco);
+        
+        // Retorna o maior preço entre os sabores selecionados.
+        return Math.max(...pricesForSize);
+
     }, [selectedFlavors, selectedSize]);
 
     const handleAddToCart = () => {
@@ -44,10 +72,18 @@ const PizzaCustomizationModal = ({ isOpen, onClose, basePizza, allFlavors }) => 
             ? `Pizza ${selectedFlavors.map(f => f.nome).join(' / ')}`
             : `Pizza ${selectedFlavors[0].nome}`;
         
-        const mostExpensiveFlavor = selectedFlavors.reduce((max, f) => f.preco > max.preco ? f : max, selectedFlavors[0]);
+        // Pega a chave do campo de preço para o tamanho selecionado
+        const priceKey = priceFieldMap[selectedSize];
+
+        // Encontra o sabor mais caro com base no preço do tamanho selecionado
+        const mostExpensiveFlavor = selectedFlavors.reduce((max, flavor) => {
+            const maxPrice = max[priceKey] || max.preco;
+            const currentPrice = flavor[priceKey] || flavor.preco;
+            return currentPrice > maxPrice ? flavor : max;
+        }, selectedFlavors[0]);
 
         const customPizza = {
-            baseItemId: mostExpensiveFlavor.id, // ID do sabor mais caro para o backend
+            baseItemId: mostExpensiveFlavor.id, // ID do sabor mais caro
             nome: pizzaName,
             preco: finalPrice,
             quantidade: 1,
@@ -123,6 +159,11 @@ const PizzaCustomizationModal = ({ isOpen, onClose, basePizza, allFlavors }) => 
                             {allFlavors.map(flavor => {
                                 const isSelected = selectedFlavors.some(f => f.id === flavor.id);
                                 const isDisabled = !isSelected && selectedFlavors.length >= maxFlavors;
+                                
+                                // ✅ ALTERAÇÃO 3: Exibe o preço correto para o tamanho selecionado.
+                                const priceKey = priceFieldMap[selectedSize];
+                                const displayPrice = flavor[priceKey] || flavor.preco;
+
                                 return (
                                     <div
                                         key={flavor.id}
@@ -148,7 +189,8 @@ const PizzaCustomizationModal = ({ isOpen, onClose, basePizza, allFlavors }) => 
                                         >
                                             {flavor.nome}
                                         </label>
-                                        <span>R$ {flavor.preco.toFixed(2)}</span>
+                                        {/* Mostra o preço dinâmico */}
+                                        <span>R$ {displayPrice.toFixed(2)}</span>
                                     </div>
                                 );
                             })}

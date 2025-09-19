@@ -37,11 +37,13 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
         
         // ALTERAÇÃO 1: Lógica de observações simplificada.
         const itemsParaBackend = cartItems.map(item => {
-            if (item.isCustomPizza) {
-                // As linhas que adicionavam detalhes à observação foram removidas.
-                return { itemId: item.baseItemId, quantidade: item.quantidade };
-            }
-            return { itemId: item.id, quantidade: item.quantidade };
+            return {
+                itemId: item.isCustomPizza ? item.baseItemId : item.id,
+                quantidade: item.quantidade,
+                // ✅ ADICIONAR ESTAS LINHAS:
+                tamanho: item.isCustomPizza ? item.tamanho : null, // Envia o tamanho se for pizza, senão null
+                precoFinal: item.preco // O campo 'preco' no carrinho já tem o valor final calculado
+            };
         });
 
         setError(''); setIsLoading(true);
