@@ -14,7 +14,6 @@ const cardStyles = {
 const buttonStyles = {
     width: '100%',
     padding: '0.75rem',
-    marginTop: '1rem',
     border: 'none',
     borderRadius: '6px',
     backgroundColor: '#333',
@@ -34,14 +33,20 @@ const PedidoCard = ({ pedido, onStatusChange }) => {
         });
     };
     
-    // ✅ 1. CÁLCULO DO SUBTOTAL (APENAS OS ITENS)
+    // Calcula o total do pedido usando o precoFinal e a taxa de entrega
     const subtotal = pedido.itens.reduce((acc, itemPedido) => {
-        const precoItem = itemPedido.precoFinal ?? itemPedido.item.preco;
+        const precoItem = itemPedido.precoFinal ?? itemPedido.item?.preco ?? 0;
         return acc + (precoItem * itemPedido.quantidade);
     }, 0);
-
-    // ✅ 2. CÁLCULO DO TOTAL FINAL (SUBTOTAL + TAXA DE ENTREGA)
     const totalPedido = (subtotal + (pedido.taxaEntrega || 0)).toFixed(2);
+    
+    // ✅ 1. NOVA FUNÇÃO PARA CANCELAR COM CONFIRMAÇÃO
+    const handleCancelClick = () => {
+        if (window.confirm('Tem certeza que deseja cancelar este pedido? Esta ação não pode ser desfeita.')) {
+            // Usa o status 5 para "Cancelado"
+            onStatusChange(pedido.id, 5);
+        }
+    };
 
     return (
         <div style={cardStyles}>
@@ -56,43 +61,47 @@ const PedidoCard = ({ pedido, onStatusChange }) => {
                 {pedido.itens.map(itemPedido => (
                     <li key={itemPedido.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                         <span>
-                            {itemPedido.quantidade}x {itemPedido.item.nome}
+                            {itemPedido.quantidade}x {itemPedido.item?.nome || 'Item não encontrado'}
                             {itemPedido.tamanho && <strong style={{ color: '#EA580C' }}> ({itemPedido.tamanho})</strong>}
                         </span>
                         <span>
-                            R$ {(itemPedido.precoFinal ?? itemPedido.item.preco).toFixed(2)}
+                            R$ {(itemPedido.precoFinal ?? itemPedido.item?.preco ?? 0).toFixed(2)}
                         </span>
                     </li>
                 ))}
             </ul>
 
             <hr style={{margin: '0.5rem 0'}}/>
-            
-            {/* ✅ 3. EXIBIÇÃO DA TAXA DE ENTREGA E DO TOTAL CORRIGIDO */}
+
             {pedido.taxaEntrega > 0 && (
                 <p><strong>Taxa de Entrega:</strong> R$ {pedido.taxaEntrega.toFixed(2)}</p>
             )}
             <p><strong>Total:</strong> R$ {totalPedido}</p>
-
             {pedido.metodoPagamento && <p><strong>Pagamento:</strong> {pedido.metodoPagamento}</p>}
             {pedido.metodoPagamento === 'Dinheiro' && pedido.trocoPara > 0 && <p><strong>Troco para:</strong> R$ {pedido.trocoPara.toFixed(2)}</p>}
             {pedido.observacoes && <p><strong>Obs:</strong> {pedido.observacoes}</p>}
 
-            {/* ... (resto do componente com os botões) ... */}
+            {/* Renderização condicional dos botões de ação */}
             {pedido.status === 1 && (
-                <button style={{...buttonStyles, backgroundColor: '#e8a234'}} onClick={() => onStatusChange(pedido.id, 2)}>
-                    Iniciar Produção
-                </button>
+                <>
+                    <button style={{...buttonStyles, backgroundColor: '#e8a234', marginTop: '1rem'}} onClick={() => onStatusChange(pedido.id, 2)}>
+                        Iniciar Produção
+                    </button>
+                    {/* ✅ 2. ADIÇÃO DO BOTÃO DE CANCELAR */}
+                    <button style={{...buttonStyles, backgroundColor: '#DC2626', marginTop: '0.5rem'}} onClick={handleCancelClick}>
+                        Cancelar Pedido
+                    </button>
+                </>
             )}
 
             {pedido.status === 2 && (
-                <button style={{...buttonStyles, backgroundColor: '#5ab44f'}} onClick={() => onStatusChange(pedido.id, 3)}>
+                <button style={{...buttonStyles, backgroundColor: '#5ab44f', marginTop: '1rem'}} onClick={() => onStatusChange(pedido.id, 3)}>
                     Pronto para Entrega
                 </button>
             )}
 
             {pedido.status === 3 && (
-                <button style={{...buttonStyles, backgroundColor: '#4B5563'}} onClick={() => onStatusChange(pedido.id, 4)}>
+                <button style={{...buttonStyles, backgroundColor: '#4B5563', marginTop: '1rem'}} onClick={() => onStatusChange(pedido.id, 4)}>
                     Finalizar Pedido
                 </button>
             )}

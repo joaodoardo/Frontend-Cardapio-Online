@@ -5,7 +5,8 @@ const statusInfo = {
     1: { texto: "Em Análise", cor: "#d4652f", emoji: "🧐" },
     2: { texto: "Em Produção", cor: "#e8a234", emoji: "🧑‍🍳" },
     3: { texto: "Pronto para Entrega", cor: "#5ab44f", emoji: "📦" },
-    4: { texto: "Finalizado / Entregue", cor: "#4B5563", emoji: "✅" }
+    4: { texto: "Finalizado / Entregue", cor: "#4B5563", emoji: "✅" },
+    5: { texto: "Cancelado", cor: "#DC2626", emoji: "❌" } 
 };
 
 const styles = {
