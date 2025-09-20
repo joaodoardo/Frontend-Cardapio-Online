@@ -1,15 +1,18 @@
 // Arquivo: Frontend-Cardapio-Online/src/components/PedidoHistorico.jsx
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Fragment } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { API_BASE_URL } from '../config';
 import styles from '../styles';
+import { ChevronDownIcon, ChevronUpIcon } from './Icons'; // Supondo que você tenha ícones de seta
 
 const PedidoHistorico = () => {
     const { token } = useAuth();
     const [pedidos, setPedidos] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    // ✅ 1. NOVO ESTADO PARA CONTROLAR A LINHA EXPANDIDA
+    const [expandedRowId, setExpandedRowId] = useState(null);
 
     const fetchHistorico = useCallback(async () => {
         setIsLoading(true);
@@ -38,6 +41,11 @@ const PedidoHistorico = () => {
         });
     };
 
+    // ✅ 2. FUNÇÃO PARA ABRIR/FECHAR OS DETALHES DE UM PEDIDO
+    const handleToggleRow = (pedidoId) => {
+        setExpandedRowId(currentId => (currentId === pedidoId ? null : pedidoId));
+    };
+
     return (
         <div style={styles.card}>
             <div style={{ ...styles.input, padding: '1.5rem', border: 'none', height: 'auto' }}>
@@ -50,6 +58,8 @@ const PedidoHistorico = () => {
                     <table style={styles.table}>
                         <thead style={styles.tableHead}>
                             <tr>
+                                {/* Adicionada uma coluna vazia para o botão de expandir */}
+                                <th style={{...styles.tableHeadCell, width: '1%'}}></th> 
                                 <th style={styles.tableHeadCell}>Data</th>
                                 <th style={styles.tableHeadCell}>Cliente</th>
                                 <th style={styles.tableHeadCell}>Endereço</th>
@@ -58,14 +68,61 @@ const PedidoHistorico = () => {
                         </thead>
                         <tbody>
                             {pedidos.map(pedido => {
-                                const total = pedido.itens.reduce((acc, itemPedido) => acc + (itemPedido.item.preco * itemPedido.quantidade), 0);
+                                // ✅ 3. CÁLCULO DO VALOR TOTAL CORRIGIDO
+                                const subtotal = pedido.itens.reduce((acc, itemPedido) => {
+                                    const precoItem = itemPedido.precoFinal ?? itemPedido.item?.preco ?? 0;
+                                    return acc + (precoItem * itemPedido.quantidade);
+                                }, 0);
+                                const total = subtotal + (pedido.taxaEntrega || 0);
+                                
+                                const isExpanded = expandedRowId === pedido.id;
+
                                 return (
-                                    <tr key={pedido.id} style={styles.tableBodyRow}>
-                                        <td style={styles.tableBodyCell}>{formatarData(pedido.criadoEm)}</td>
-                                        <td style={{...styles.tableBodyCell, fontWeight: 500}}>{pedido.nomeCliente}</td>
-                                        <td style={styles.tableBodyCell}>{pedido.endereco}</td>
-                                        <td style={styles.tableBodyCell}>R$ {total.toFixed(2)}</td>
-                                    </tr>
+                                    // Fragment permite agrupar a linha principal e a de detalhes
+                                    <Fragment key={pedido.id}>
+                                        <tr style={{...styles.tableBodyRow, cursor: 'pointer'}} onClick={() => handleToggleRow(pedido.id)}>
+                                            <td style={styles.tableBodyCell}>
+                                                {/* Ícone muda dependendo se a linha está expandida ou não */}
+                                                {isExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                                            </td>
+                                            <td style={styles.tableBodyCell}>{formatarData(pedido.criadoEm)}</td>
+                                            <td style={{...styles.tableBodyCell, fontWeight: 500}}>{pedido.nomeCliente}</td>
+                                            <td style={styles.tableBodyCell}>{pedido.endereco}</td>
+                                            <td style={styles.tableBodyCell}>R$ {total.toFixed(2).replace('.', ',')}</td>
+                                        </tr>
+                                        {/* ✅ 4. RENDERIZAÇÃO CONDICIONAL DA LINHA DE DETALHES */}
+                                        {isExpanded && (
+                                            <tr style={{backgroundColor: '#F9FAFB'}}>
+                                                <td colSpan="5" style={{padding: '1rem 1.5rem'}}>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+                                                        <div>
+                                                            <strong style={{display: 'block', marginBottom: '0.5rem'}}>Itens do Pedido:</strong>
+                                                            <ul style={{margin: 0, paddingLeft: '1rem'}}>
+                                                                {pedido.itens.map(itemPedido => (
+                                                                    <li key={itemPedido.id}>
+                                                                        {itemPedido.quantidade}x {itemPedido.item?.nome || 'Item não encontrado'}
+                                                                        {itemPedido.tamanho && ` (${itemPedido.tamanho})`}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                        <div>
+                                                            <strong style={{display: 'block', marginBottom: '0.5rem'}}>Detalhes Financeiros:</strong>
+                                                            <p style={{margin: 0}}>Subtotal: R$ {subtotal.toFixed(2).replace('.', ',')}</p>
+                                                            {pedido.taxaEntrega > 0 && <p style={{margin: 0}}>Taxa de Entrega: R$ {pedido.taxaEntrega.toFixed(2).replace('.', ',')}</p>}
+                                                            <p style={{margin: 0, fontWeight: 'bold'}}>Total: R$ {total.toFixed(2).replace('.', ',')}</p>
+                                                        </div>
+                                                        {pedido.observacoes && (
+                                                            <div>
+                                                                <strong style={{display: 'block', marginBottom: '0.5rem'}}>Observações:</strong>
+                                                                <p style={{margin: 0, fontStyle: 'italic'}}>{pedido.observacoes}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </Fragment>
                                 );
                             })}
                         </tbody>

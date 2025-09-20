@@ -11,7 +11,11 @@ const WHATSAPP_NUMBER = '5538999478040'; // Número com código do país (55 par
 // --- FIM DAS CONFIGURAÇÕES ---
 
 const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
+    // --- ESTADOS DO COMPONENTE ---
     const [formData, setFormData] = useState({ nomeCliente: '', telefone: '', endereco: '', observacoes: '' });
+    const [deliveryOption, setDeliveryOption] = useState('delivery'); // Opções: 'delivery', 'pickup', 'table'
+    const [tableNumber, setTableNumber] = useState('');
+    const [taxaEntrega, setTaxaEntrega] = useState(0);
     const [paymentMethod, setPaymentMethod] = useState('Dinheiro');
     const [trocoPara, setTrocoPara] = useState('');
     const [error, setError] = useState('');
@@ -19,6 +23,7 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [copySuccess, setCopySuccess] = useState('');
 
+    // --- FUNÇÕES AUXILIARES ---
     const handleChange = (e) => setFormData({...formData, [e.target.name]: e.target.value });
 
     const handleCopyToClipboard = () => {
@@ -30,52 +35,31 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
         });
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const { nomeCliente, telefone, endereco } = formData;
-        if (!nomeCliente || !telefone || !endereco) { setError('Por favor, preencha nome, telefone e endereço.'); return; }
-        
-        // ALTERAÇÃO 1: Lógica de observações simplificada.
-        const itemsParaBackend = cartItems.map(item => {
-            return {
-                itemId: item.isCustomPizza ? item.baseItemId : item.id,
-                quantidade: item.quantidade,
-                // ✅ ADICIONAR ESTAS LINHAS:
-                tamanho: item.isCustomPizza ? item.tamanho : null, // Envia o tamanho se for pizza, senão null
-                precoFinal: item.preco // O campo 'preco' no carrinho já tem o valor final calculado
-            };
-        });
+    // --- EFEITOS (LIFECYCLE) ---
 
-        setError(''); setIsLoading(true);
-        const pedido = { 
-            ...formData, 
-            observacoes: formData.observacoes.trim(), // Usando diretamente o valor do formulário
-            itens: itemsParaBackend,
-            metodoPagamento: paymentMethod,
-            trocoPara: paymentMethod === 'Dinheiro' && trocoPara ? parseFloat(trocoPara) : null,
+    // Efeito para buscar a taxa de entrega quando o modal abre
+    useEffect(() => {
+        const fetchTaxaEntrega = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/entrega`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setTaxaEntrega(data.taxaEntrega);
+                } else {
+                    setTaxaEntrega(0); // Define 0 se não encontrar a taxa
+                }
+            } catch (error) {
+                console.error("Falha ao buscar taxa de entrega:", error);
+                setTaxaEntrega(0); 
+            }
         };
 
-        try {
-            const r = await fetch(`${API_BASE_URL}/pedido`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pedido) });
-            if (!r.ok) throw new Error('Falha ao enviar o pedido.');
-            const res = await r.json();
-            setSuccess({ message: `Pedido #${res.pedidoId} realizado com sucesso!`, pedidoId: res.pedidoId, paymentMethod });
-            
-            // ALTERAÇÃO 2: Salva os dados do cliente no localStorage após o sucesso.
-            const customerDataToSave = {
-                nomeCliente: formData.nomeCliente,
-                telefone: formData.telefone,
-                endereco: formData.endereco,
-            };
-            localStorage.setItem('customerData', JSON.stringify(customerDataToSave));
+        if (isOpen) {
+            fetchTaxaEntrega();
+        }
+    }, [isOpen]);
 
-            if (paymentMethod !== 'Pix') {
-                clearCart();
-            }
-        } catch (err) { setError(err.message || 'Ocorreu um erro.'); } finally { setIsLoading(false); }
-    };
-
-    // ALTERAÇÃO 3: useEffect modificado para carregar dados do localStorage.
+    // Efeito para carregar dados do localStorage e resetar o formulário
     useEffect(() => { 
         if (isOpen) {
             const savedData = localStorage.getItem('customerData');
@@ -87,15 +71,91 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
                     endereco: endereco || '',
                     observacoes: '' 
                 });
+                setDeliveryOption('delivery'); // Se tem dados salvos, a opção é entrega
             }
         } else {
+            // Reseta todos os estados ao fechar o modal
             setFormData({ nomeCliente: '', telefone: '', endereco: '', observacoes: '' }); 
-            setError(''); setSuccess(null); setIsLoading(false); setPaymentMethod('Dinheiro'); setTrocoPara('');
+            setDeliveryOption('delivery');
+            setTableNumber('');
+            setError(''); 
+            setSuccess(null); 
+            setIsLoading(false); 
+            setPaymentMethod('Dinheiro'); 
+            setTrocoPara('');
         }
     }, [isOpen]);
-    
-    if (!isOpen) return null;
 
+    // --- LÓGICA DE ENVIO ---
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        
+        let finalAddress = '';
+        let validationError = '';
+
+        // Validação dinâmica baseada na opção de entrega
+        if (deliveryOption === 'delivery') {
+            if (!formData.endereco.trim()) validationError = 'Por favor, preencha o endereço de entrega.';
+            finalAddress = formData.endereco;
+        } else if (deliveryOption === 'table') {
+            if (!tableNumber.trim()) validationError = 'Por favor, informe o número da mesa.';
+            finalAddress = `Mesa: ${tableNumber}`;
+        } else if (deliveryOption === 'pickup') {
+            finalAddress = 'Retirar no estabelecimento';
+        }
+
+        if (!formData.nomeCliente.trim() || !formData.telefone.trim()) {
+            validationError = 'Por favor, preencha nome e telefone.';
+        }
+        
+        if (validationError) {
+            setError(validationError);
+            return;
+        }
+        
+        const itemsParaBackend = cartItems.map(item => ({
+            itemId: item.isCustomPizza ? item.baseItemId : item.id,
+            quantidade: item.quantidade,
+            tamanho: item.isCustomPizza ? item.tamanho : null,
+            precoFinal: item.preco
+        }));
+
+        setError(''); 
+        setIsLoading(true);
+
+        const pedido = { 
+            ...formData, 
+            endereco: finalAddress,
+            observacoes: formData.observacoes.trim(),
+            itens: itemsParaBackend,
+            metodoPagamento: paymentMethod,
+            trocoPara: paymentMethod === 'Dinheiro' && trocoPara ? parseFloat(trocoPara) : null,
+            taxaEntrega: deliveryOption === 'delivery' ? taxaEntrega : 0,
+        };
+
+        try {
+            const r = await fetch(`${API_BASE_URL}/pedido`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pedido) });
+            if (!r.ok) throw new Error('Falha ao enviar o pedido.');
+            const res = await r.json();
+            setSuccess({ message: `Pedido #${res.pedidoId} realizado com sucesso!`, pedidoId: res.pedidoId, paymentMethod });
+            
+            if (deliveryOption === 'delivery') {
+                localStorage.setItem('customerData', JSON.stringify({
+                    nomeCliente: formData.nomeCliente,
+                    telefone: formData.telefone,
+                    endereco: formData.endereco,
+                }));
+            }
+
+            if (paymentMethod !== 'Pix') {
+                clearCart();
+            }
+        } catch (err) { setError(err.message || 'Ocorreu um erro.'); } finally { setIsLoading(false); }
+    };
+
+    // --- CÁLCULO E RENDERIZAÇÃO ---
+    const finalTotal = deliveryOption === 'delivery' ? total + taxaEntrega : total;
+    if (!isOpen) return null;
     const whatsappMessage = success ? encodeURIComponent(`Olá! Gostaria de saber sobre o meu pedido #${success.pedidoId}.`) : '';
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`;
 
@@ -137,7 +197,26 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
                         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div><label style={styles.label} htmlFor="nomeCliente">Nome Completo</label><input style={styles.input} type="text" id="nomeCliente" name="nomeCliente" value={formData.nomeCliente} onChange={handleChange} required /></div>
                             <div><label style={styles.label} htmlFor="telefone">Telefone / WhatsApp</label><input style={styles.input} type="tel" id="telefone" name="telefone" value={formData.telefone} onChange={handleChange} required /></div>
-                            <div><label style={styles.label} htmlFor="endereco">Endereço de Entrega</label><input style={styles.input} type="text" id="endereco" name="endereco" value={formData.endereco} onChange={handleChange} required /></div>
+                            
+                            <div>
+                                <label style={styles.label}>Opção de Entrega</label>
+                                <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem'}}>
+                                    {[{id: 'delivery', name: 'Para Entrega'}, {id: 'table', name: 'Comer no Local'}, {id: 'pickup', name: 'Retirar no Balcão'}].map(option => (
+                                        <label key={option.id} style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'}}>
+                                            <input type="radio" name="deliveryOption" value={option.id} checked={deliveryOption === option.id} onChange={(e) => setDeliveryOption(e.target.value)} />
+                                            {option.name}
+                                        </label>
+                                    ))}
+                                </div>
+                                
+                                {deliveryOption === 'delivery' && (
+                                    <div><label style={styles.label} htmlFor="endereco">Endereço de Entrega</label><input style={styles.input} type="text" id="endereco" name="endereco" value={formData.endereco} onChange={handleChange} placeholder="Rua, Número, Bairro" required /></div>
+                                )}
+                                {deliveryOption === 'table' && (
+                                    <div><label style={styles.label} htmlFor="tableNumber">Número da Mesa</label><input style={styles.input} type="number" id="tableNumber" name="tableNumber" value={tableNumber} onChange={(e) => setTableNumber(e.target.value)} placeholder="Informe o nº da mesa" required /></div>
+                                )}
+                            </div>
+
                             <div><label style={styles.label} htmlFor="observacoes">Observações</label><textarea style={{...styles.input, height: '80px'}} id="observacoes" name="observacoes" value={formData.observacoes} onChange={handleChange} placeholder="Ex: Sem cebola, etc." /></div>
                             
                             <div style={{paddingTop: '1rem', borderTop: '1px solid #E5E7EB'}}>
@@ -160,7 +239,19 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
                             )}
 
                             <div style={{ paddingTop: '1rem', borderTop: '1px solid #E5E7EB' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.125rem', marginBottom: '1rem' }}><span>Total:</span><span>R$ {total.toFixed(2)}</span></div>
+                                {deliveryOption === 'delivery' && taxaEntrega > 0 && (
+                                    <>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                                            <span>Subtotal:</span><span>R$ {total.toFixed(2)}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                                            <span>Taxa de Entrega:</span><span>R$ {taxaEntrega.toFixed(2)}</span>
+                                        </div>
+                                    </>
+                                )}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.125rem', marginBottom: '1rem' }}>
+                                    <span>Total:</span><span>R$ {finalTotal.toFixed(2)}</span>
+                                </div>
                                 {error && <p style={{ color: 'red', fontSize: '0.875rem', marginBottom: '1rem' }}>{error}</p>}
                                 <StyledButton type="submit" disabled={isLoading} style={{ width: '100%', padding: '0.75rem', fontSize: '1rem' }}>{isLoading ? 'Enviando...' : 'Confirmar Pedido'}</StyledButton>
                             </div>

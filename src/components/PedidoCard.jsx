@@ -34,14 +34,14 @@ const PedidoCard = ({ pedido, onStatusChange }) => {
         });
     };
     
-    // ✅ ALTERAÇÃO 1: Corrigido o cálculo do total do pedido
-    // Agora, ele prioriza o 'precoFinal' salvo no item do pedido.
-    // O '??' (operador de coalescência nula) usa o preço base do item como um fallback
-    // caso 'precoFinal' não exista (para pedidos antigos ou itens normais).
-    const totalPedido = pedido.itens.reduce((acc, itemPedido) => {
+    // ✅ 1. CÁLCULO DO SUBTOTAL (APENAS OS ITENS)
+    const subtotal = pedido.itens.reduce((acc, itemPedido) => {
         const precoItem = itemPedido.precoFinal ?? itemPedido.item.preco;
         return acc + (precoItem * itemPedido.quantidade);
-    }, 0).toFixed(2);
+    }, 0);
+
+    // ✅ 2. CÁLCULO DO TOTAL FINAL (SUBTOTAL + TAXA DE ENTREGA)
+    const totalPedido = (subtotal + (pedido.taxaEntrega || 0)).toFixed(2);
 
     return (
         <div style={cardStyles}>
@@ -54,14 +54,11 @@ const PedidoCard = ({ pedido, onStatusChange }) => {
             <strong>Itens:</strong>
             <ul style={{ listStyle: 'none', paddingLeft: '0', fontSize: '0.9em' }}>
                 {pedido.itens.map(itemPedido => (
-                    // ✅ ALTERAÇÃO 2: Exibição do item corrigida
                     <li key={itemPedido.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                         <span>
                             {itemPedido.quantidade}x {itemPedido.item.nome}
-                            {/* Mostra o tamanho da pizza, se ele existir no pedido */}
                             {itemPedido.tamanho && <strong style={{ color: '#EA580C' }}> ({itemPedido.tamanho})</strong>}
                         </span>
-                        {/* Mostra o preço individual do item no momento da compra */}
                         <span>
                             R$ {(itemPedido.precoFinal ?? itemPedido.item.preco).toFixed(2)}
                         </span>
@@ -70,13 +67,18 @@ const PedidoCard = ({ pedido, onStatusChange }) => {
             </ul>
 
             <hr style={{margin: '0.5rem 0'}}/>
-
+            
+            {/* ✅ 3. EXIBIÇÃO DA TAXA DE ENTREGA E DO TOTAL CORRIGIDO */}
+            {pedido.taxaEntrega > 0 && (
+                <p><strong>Taxa de Entrega:</strong> R$ {pedido.taxaEntrega.toFixed(2)}</p>
+            )}
             <p><strong>Total:</strong> R$ {totalPedido}</p>
+
             {pedido.metodoPagamento && <p><strong>Pagamento:</strong> {pedido.metodoPagamento}</p>}
             {pedido.metodoPagamento === 'Dinheiro' && pedido.trocoPara > 0 && <p><strong>Troco para:</strong> R$ {pedido.trocoPara.toFixed(2)}</p>}
             {pedido.observacoes && <p><strong>Obs:</strong> {pedido.observacoes}</p>}
 
-            {/* Renderização condicional do botão de ação */}
+            {/* ... (resto do componente com os botões) ... */}
             {pedido.status === 1 && (
                 <button style={{...buttonStyles, backgroundColor: '#e8a234'}} onClick={() => onStatusChange(pedido.id, 2)}>
                     Iniciar Produção

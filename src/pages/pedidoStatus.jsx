@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '../config';
 
-// O objeto statusInfo continua o mesmo
 const statusInfo = {
     1: { texto: "Em Análise", cor: "#d4652f", emoji: "🧐" },
     2: { texto: "Em Produção", cor: "#e8a234", emoji: "🧑‍🍳" },
@@ -9,7 +8,6 @@ const statusInfo = {
     4: { texto: "Finalizado / Entregue", cor: "#4B5563", emoji: "✅" }
 };
 
-// Os estilos continuam os mesmos
 const styles = {
     container: {
         maxWidth: '700px',
@@ -71,90 +69,54 @@ const PedidosStatus = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // ======================================================================
-    // ✅ INÍCIO DA ALTERAÇÃO 1: LÓGICA DE BUSCA REATORADA
-    // ======================================================================
     const buscarPedidosPorTelefone = useCallback(async (numeroParaBuscar) => {
         if (!numeroParaBuscar) return;
-
         setIsLoading(true);
         setError('');
         setPedidos([]);
         setNomeCliente('');
-
         try {
             const response = await fetch(`${API_BASE_URL}/pedidos/cliente/${numeroParaBuscar}`);
             const data = await response.json();
-
             if (!response.ok) {
                 throw new Error(data.message || 'Falha ao buscar pedidos.');
             }
-            
             setPedidos(data);
             if (data.length > 0) {
                 setNomeCliente(data[0].nomeCliente);
             }
-
         } catch (err) {
             setError(err.message);
-            setPedidos([]); // Limpa os pedidos em caso de erro
+            setPedidos([]);
         } finally {
             setIsLoading(false);
         }
-    }, []); // useCallback para evitar recriação desnecessária da função
+    }, []);
 
-    // O handler do formulário agora apenas chama a função de busca
     const handleFormSubmit = (e) => {
         e.preventDefault();
         buscarPedidosPorTelefone(telefone);
     };
-    // ======================================================================
-    // ✅ FIM DA ALTERAÇÃO 1
-    // ======================================================================
 
-
-    // ======================================================================
-    // ✅ INÍCIO DA ALTERAÇÃO 2: useEffect PARA BUSCA AUTOMÁTICA
-    // ======================================================================
     useEffect(() => {
-        // Tenta buscar os dados do cliente no localStorage
         const savedDataString = localStorage.getItem('customerData');
         if (savedDataString) {
             const savedData = JSON.parse(savedDataString);
             if (savedData.telefone) {
-                console.log(`Telefone encontrado no localStorage: ${savedData.telefone}. Buscando pedidos...`);
-                // Define o telefone no estado para preencher o input
                 setTelefone(savedData.telefone);
-                // Chama a função de busca com o número encontrado
                 buscarPedidosPorTelefone(savedData.telefone);
             }
         }
-    }, [buscarPedidosPorTelefone]); // A dependência agora é a função memoizada
-    // ======================================================================
-    // ✅ FIM DA ALTERAÇÃO 2
-    // ======================================================================
+    }, [buscarPedidosPorTelefone]);
 
-    
-    // useEffect para atualização automática (polling) continua o mesmo
     useEffect(() => {
         if (telefone && pedidos.length > 0) {
-            const intervalId = setInterval(async () => {
-                console.log(`Atualizando automaticamente pedidos para o telefone: ${telefone}`);
-                try {
-                    const response = await fetch(`${API_BASE_URL}/pedidos/cliente/${telefone}`);
-                    const data = await response.json();
-                    if (response.ok) {
-                        setPedidos(data); // Apenas atualiza a lista
-                    }
-                } catch (err) {
-                    console.error("Erro na atualização automática:", err);
-                }
+            const intervalId = setInterval(() => {
+                buscarPedidosPorTelefone(telefone);
             }, 60000);
-
             return () => clearInterval(intervalId);
         }
-    }, [telefone, pedidos.length]);
-
+    }, [telefone, pedidos.length, buscarPedidosPorTelefone]);
 
     const formatarData = (dataString) => {
         const opcoes = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' };
@@ -171,7 +133,6 @@ const PedidosStatus = () => {
 
             <p>Digite o número de telefone usado no pedido para ver o status.</p>
             
-            {/* O formulário agora chama handleFormSubmit */}
             <form onSubmit={handleFormSubmit}>
                 <input 
                     type="tel"
@@ -188,15 +149,16 @@ const PedidosStatus = () => {
 
             {error && <p style={{ color: 'red', textAlign: 'center', marginTop: '1rem' }}>{error}</p>}
 
-            {/* O restante do JSX para renderizar os pedidos permanece o mesmo */}
             {pedidos.length > 0 && (
                 <div style={{ marginTop: '2rem' }}>
                     <h3>Seus pedidos recentes:</h3>
                     {pedidos.map(p => {
-                        const valorTotal = p.itens.reduce((total, itemPedido) => {
-                            return total + (itemPedido.item.preco * itemPedido.quantidade);
+                        const subtotal = p.itens.reduce((total, itemPedido) => {
+                            const precoDoItem = itemPedido.precoFinal ?? itemPedido.item?.preco ?? 0;
+                            return total + (precoDoItem * itemPedido.quantidade);
                         }, 0);
 
+                        const valorTotal = subtotal + (p.taxaEntrega || 0);
                         const statusAtual = statusInfo[p.status] || { texto: 'Desconhecido', cor: '#ccc', emoji: '❓' };
 
                         return (
@@ -218,15 +180,35 @@ const PedidosStatus = () => {
                                     <strong>Itens:</strong>
                                     <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0', color: '#555' }}>
                                         {p.itens.map(itemPedido => (
-                                            <li key={itemPedido.id} style={{ marginBottom: '0.25rem' }}>
-                                                {itemPedido.quantidade}x {itemPedido.item.nome}
+                                            <li key={itemPedido.id} style={{ marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between' }}>
+                                                <span>
+                                                    {itemPedido.quantidade}x {itemPedido.item?.nome || 'Item não encontrado'}
+                                                    {itemPedido.tamanho && <strong style={{color: '#EA580C'}}> ({itemPedido.tamanho})</strong>}
+                                                </span>
+                                                <span>
+                                                    R$ {(itemPedido.precoFinal ?? itemPedido.item?.preco ?? 0).toFixed(2).replace('.', ',')}
+                                                </span>
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
 
                                 <div style={{ borderTop: '1px solid #eee', marginTop: '1rem', paddingTop: '1rem', textAlign: 'right' }}>
-                                    <strong style={{fontSize: '1.1rem'}}>Valor Total: R$ {valorTotal.toFixed(2).replace('.', ',')}</strong>
+                                    {/* Verifica se a taxa de entrega existe e é maior que zero */}
+                                    {(p.taxaEntrega || 0) > 0 && (
+                                        <>
+                                            <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem' }}>
+                                                Subtotal: R$ {subtotal.toFixed(2).replace('.', ',')}
+                                            </p>
+                                            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>
+                                                {/* ✅ CORREÇÃO AQUI: Adicionado '|| 0' para evitar o erro */}
+                                                Taxa de Entrega: R$ {(p.taxaEntrega || 0).toFixed(2).replace('.', ',')}
+                                            </p>
+                                        </>
+                                    )}
+                                    <strong style={{fontSize: '1.1rem'}}>
+                                        Valor Total: R$ {valorTotal.toFixed(2).replace('.', ',')}
+                                    </strong>
                                 </div>
                             </div>
                         );
