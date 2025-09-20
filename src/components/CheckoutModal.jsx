@@ -23,7 +23,7 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [copySuccess, setCopySuccess] = useState('');
 
-    // --- LÓGICA DO COMPONENTE (PERMANECE A MESMA) ---
+    // --- FUNÇÕES AUXILIARES ---
     const handleChange = (e) => setFormData({...formData, [e.target.name]: e.target.value });
 
     const handleCopyToClipboard = () => {
@@ -35,6 +35,7 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
         });
     };
 
+    // --- EFEITOS (LIFECYCLE) ---
     useEffect(() => {
         const fetchTaxaEntrega = async () => {
             try {
@@ -56,12 +57,7 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
             const savedData = localStorage.getItem('customerData');
             if (savedData) {
                 const { nomeCliente, telefone, endereco } = JSON.parse(savedData);
-                setFormData({
-                    nomeCliente: nomeCliente || '',
-                    telefone: telefone || '',
-                    endereco: endereco || '',
-                    observacoes: '' 
-                });
+                setFormData({ nomeCliente: nomeCliente || '', telefone: telefone || '', endereco: endereco || '', observacoes: '' });
                 setDeliveryOption('delivery');
             }
         } else {
@@ -76,6 +72,7 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
         }
     }, [isOpen]);
 
+    // --- LÓGICA DE ENVIO ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         
@@ -133,10 +130,20 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
                     endereco: formData.endereco,
                 }));
             }
+
+            // ✅ LÓGICA CORRETA: Limpa o carrinho apenas para pagamentos não-Pix.
             if (paymentMethod !== 'Pix') {
                 clearCart();
             }
         } catch (err) { setError(err.message || 'Ocorreu um erro.'); } finally { setIsLoading(false); }
+    };
+
+    // ✅ NOVA FUNÇÃO para fechar o modal e limpar o carrinho (se for Pix)
+    const handleClose = () => {
+        if (success && success.paymentMethod === 'Pix') {
+            clearCart();
+        }
+        onClose();
     };
 
     const finalTotal = deliveryOption === 'delivery' ? total + taxaEntrega : total;
@@ -145,18 +152,15 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`;
 
     return (
-        // ✅ 1. O OVERLAY AGORA PERMITE ROLAGEM E NÃO CENTRALIZA O CONTEÚDO
         <div style={{...styles.modalOverlay, zIndex: 60, alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto' }}>
-            {/* ✅ 2. O CONTEÚDO DO MODAL AGORA TEM ESTILOS PARA OCUPAR A TELA E SER FLEXÍVEL */}
             <div style={{
                 ...styles.modalContent, 
                 zIndex: 61,
-                width: '100%', // Ocupa toda a largura
-                minHeight: '100vh', // Ocupa no mínimo toda a altura da tela
-                borderRadius: 0, // Remove bordas arredondadas em tela cheia
-                display: 'flex', // Habilita o layout flexível
-                flexDirection: 'column', // Organiza os filhos em coluna
-                // Em telas maiores, ele volta a se comportar como um modal normal
+                width: '100%',
+                minHeight: '100vh',
+                borderRadius: 0,
+                display: 'flex',
+                flexDirection: 'column',
                 '@media (min-width: 640px)': {
                     width: 'auto',
                     minHeight: 'auto',
@@ -168,30 +172,36 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
                     <h3 style={{fontSize: '1.125rem', fontWeight: 600}}>
                         {success ? 'Pedido Enviado!' : 'Finalizar Pedido'}
                     </h3>
-                    <StyledButton onClick={onClose} style={{padding: '0.25rem'}}><XIcon /></StyledButton>
+                    <StyledButton onClick={handleClose} style={{padding: '0.25rem'}}><XIcon /></StyledButton>
                 </div>
 
-                {/* ✅ 3. O CORPO DO MODAL AGORA É QUEM FAZ O SCROLL INTERNO */}
-                <div style={{
-                    ...styles.modalBody,
-                    flexGrow: 1, // Faz esta div crescer para ocupar o espaço
-                    overflowY: 'auto' // Adiciona scroll apenas nesta área
-                }}>
+                <div style={{ ...styles.modalBody, flexGrow: 1, overflowY: 'auto' }}>
                     {success ? (
-                        // ... CÓDIGO DA TELA DE SUCESSO ...
                         success.paymentMethod === 'Pix' ? (
                             <div style={{ textAlign: 'center', padding: '1rem' }}>
-                                {/* ... conteúdo pix ... */}
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#16A34A' }}>Pedido feito!</h3>
+                                <p style={{ marginTop: '0.5rem', marginBottom: '1.5rem' }}>Para confirmar, faça o pagamento via Pix e envie o comprovante em nosso WhatsApp.</p>
+                                <div style={{backgroundColor: '#F3F4F6', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', border: '1px solid #E5E7EB'}}>
+                                    <p style={{fontSize: '0.875rem', color: '#6B7280'}}>Chave Pix (Telefone)</p>
+                                    <p style={{fontWeight: 600, fontSize: '1.125rem', margin: '0.25rem 0'}}>{PIX_KEY}</p>
+                                    <p style={{fontSize: '0.875rem', color: '#6B7280'}}>{PIX_NAME}</p>
+                                    <StyledButton onClick={handleCopyToClipboard} style={{marginTop: '1rem', width: '100%'}} variant="secondary">
+                                        {copySuccess || 'Copiar Chave Pix'}
+                                    </StyledButton>
+                                </div>
+                                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" style={{textDecoration: 'none'}}>
+                                    <StyledButton style={{width: '100%'}}>Falar sobre meu pedido no WhatsApp</StyledButton>
+                                </a>
                             </div>
                         ) : (
                             <div style={{ textAlign: 'center', padding: '1rem' }}>
-                                {/* ... conteúdo sucesso normal ... */}
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#16A34A' }}>Obrigado!</h3>
+                                <p style={{ marginTop: '0.5rem' }}>{success.message}</p>
+                                <StyledButton onClick={handleClose} style={{ marginTop: '1.5rem', width: '100%' }}>Fechar</StyledButton>
                             </div>
                         )
                     ) : (
-                        // ✅ 4. O FORMULÁRIO FOI MOVIDO PARA DENTRO DO CORPO ROLÁVEL
                         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {/* ... TODOS OS CAMPOS DO FORMULÁRIO ... */}
                             <div><label style={styles.label} htmlFor="nomeCliente">Nome Completo</label><input style={styles.input} type="text" id="nomeCliente" name="nomeCliente" value={formData.nomeCliente} onChange={handleChange} required /></div>
                             <div><label style={styles.label} htmlFor="telefone">Telefone / WhatsApp</label><input style={styles.input} type="tel" id="telefone" name="telefone" value={formData.telefone} onChange={handleChange} required /></div>
                             
@@ -235,15 +245,7 @@ const CheckoutModal = ({ isOpen, onClose, cartItems, total, clearCart }) => {
                                 </div>
                             )}
 
-                            {/* ✅ 5. O RODAPÉ DO FORMULÁRIO AGORA FICA FIXO NO FINAL */}
-                            <div style={{ 
-                                paddingTop: '1rem', 
-                                borderTop: '1px solid #E5E7EB',
-                                backgroundColor: 'white', // Garante que não fique transparente ao rolar
-                                position: 'sticky', // Fixo no final
-                                bottom: 0, // Cola no fundo
-                                paddingBottom: '1rem' // Espaçamento
-                            }}>
+                            <div style={{ paddingTop: '1rem', borderTop: '1px solid #E5E7EB', backgroundColor: 'white', position: 'sticky', bottom: 0, paddingBottom: '1rem' }}>
                                 {deliveryOption === 'delivery' && taxaEntrega > 0 && (
                                     <>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
